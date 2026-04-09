@@ -24,9 +24,32 @@ def get_rc_for_day(day):
 WEIBULL_K = 0.7
 WEIBULL_LAMBDA = 1 / (730 ** WEIBULL_K)
 
-# ==================== Weibull hazard function ====================
-def weibull_hazard(T):
-    return WEIBULL_K * WEIBULL_LAMBDA * np.power(T, WEIBULL_K - 1)
+# ==================== Weibull hazard function with population-dependent churn ====================
+def weibull_hazard(T, active_users=None, alpha=0.05):
+    """Calculate Weibull hazard rate with optional population-dependent churn.
+    
+    Args:
+        T: Tenure in days (scalar or array)
+        active_users: Current active user count. If None, hazard is age-based only.
+        alpha: Sensitivity to population effects (default 0.05)
+    
+    Returns:
+        Hazard rate(s), adjusted for population if active_users provided.
+    """
+    base_hazard = WEIBULL_K * WEIBULL_LAMBDA * np.power(T, WEIBULL_K - 1)
+    
+    if active_users is not None and active_users > 0:
+        # Network effect: larger user base → lower churn
+        # multiplier = 1 - α × log(active_users)
+        # At 1M users: multiplier ≈ 1 - 0.05 × 13.8 ≈ 0.31 (low churn)
+        # At 100K users: multiplier ≈ 1 - 0.05 × 11.5 ≈ 0.42 (medium churn)
+        # At 10K users: multiplier ≈ 1 - 0.05 × 9.2 ≈ 0.54 (higher churn)
+        log_users = np.log(active_users)
+        multiplier = 1 - alpha * log_users
+        multiplier = np.clip(multiplier, 0.1, 1.0)  # Bound between 0.1 and 1.0
+        return base_hazard * multiplier
+    
+    return base_hazard
 
 # ==================== Set random seeds for reproducibility ====================
 def set_seed(seed):

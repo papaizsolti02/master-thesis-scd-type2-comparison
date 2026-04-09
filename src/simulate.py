@@ -26,7 +26,7 @@ def simulate(seed=1, N_initial=1000000, save_snapshots=True):
         df["DayNumber"] = 0
         df["r"] = None
         df["c"] = None
-        df.to_csv(OUTPUT_DIR / f"seed{seed}_day000.csv", index=False)
+        df.to_csv(OUTPUT_DIR / "users_day000.csv", index=False)
     print(f"Day   0 | Initial snapshot | Active users: {len(df):>9,}", flush=True)
 
     for day in range(1, 101):
@@ -34,7 +34,9 @@ def simulate(seed=1, N_initial=1000000, save_snapshots=True):
 
         df["TenureDays"] += 1
 
-        hazards = weibull_hazard(df["TenureDays"].values)
+        # Calculate hazards with population-dependent churn
+        active_user_count = len(df)
+        hazards = weibull_hazard(df["TenureDays"].values, active_users=active_user_count)
         survive_mask = np.random.rand(len(df)) >= hazards
         churned = (~survive_mask).sum()
         df = df.loc[survive_mask].reset_index(drop=True)
@@ -63,7 +65,7 @@ def simulate(seed=1, N_initial=1000000, save_snapshots=True):
         )
 
         if save_snapshots:
-            df.to_csv(OUTPUT_DIR / f"seed{seed}_day{day:03d}.csv", index=False)
+            df.to_csv(OUTPUT_DIR / f"users_day{day:03d}.csv", index=False)
 
     print(f"\nDone! 101 snapshots saved to: {OUTPUT_DIR}/", flush=True)
     return df

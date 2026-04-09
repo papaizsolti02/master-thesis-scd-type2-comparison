@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from random import random
-from random import random
 
 import numpy as np
 import pandas as pd
@@ -27,6 +26,8 @@ def generate_new_users(day, df, start_date):
         uid = max_id + 1 + i
         row = {
             "UserID": uid,
+            "FirstName": f"FirstName{uid}",
+            "LastName": f"LastName{uid}",
             "Email": f"user{uid}@example.com",
             "Username": f"user_{uid}",
             "DateOfBirth": random_date().strftime("%Y-%m-%d"),

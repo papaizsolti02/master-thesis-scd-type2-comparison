@@ -29,6 +29,8 @@ def generate_initial_snapshot(N=1_000_000, zipf_s=1.0):
         for _ in range(size):
             row = {
                 "UserID": user_id,
+                "FirstName": f"FirstName{user_id}",
+                "LastName": f"LastName{user_id}",
                 "Email": f"user{user_id}@example.com",
                 "Username": f"user_{user_id}",
                 "DateOfBirth": random_date().strftime("%Y-%m-%d"),

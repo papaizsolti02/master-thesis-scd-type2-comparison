@@ -75,7 +75,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Generate and upload
-        run: python src/data_generator.py
+        run: python -m src.data_generator
         env:
           DATALAKE_CONNECTION_STRING: ${{ secrets.DATALAKE_CONNECTION_STRING }}
           DATALAKE_KEY: ${{ secrets.DATALAKE_KEY }}

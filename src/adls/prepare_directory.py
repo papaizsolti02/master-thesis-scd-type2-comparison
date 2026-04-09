@@ -17,46 +17,60 @@ def main() -> None:
     if not directory_name:
         raise ValueError("DATALAKE_DIRECTORY is required.")
 
+    print(f"Waiting 5 seconds for previous filesystem deletion to complete...", flush=True)
+    time.sleep(5)
+
     service = DataLakeServiceClient.from_connection_string(connection_string)
     filesystem = service.get_file_system_client(filesystem_name)
 
     # Create filesystem with retry for timing issues
-    max_retries = 3
+    max_retries = 5
+    filesystem_created = False
     for attempt in range(max_retries):
         try:
             filesystem.create_file_system()
-            print(f"Created ADLS filesystem: {filesystem_name}")
+            print(f"Created ADLS filesystem: {filesystem_name}", flush=True)
+            filesystem_created = True
             break
         except ResourceExistsError:
-            print(f"ADLS filesystem already exists: {filesystem_name}")
-            break
-        except ResourceNotFoundError:
-            if attempt < max_retries - 1:
-                print(f"Filesystem creation attempt {attempt + 1} failed, retrying in 1 second...")
-                time.sleep(1)
-            else:
-                raise
-
-    # Additional delay to ensure filesystem is fully ready
-    time.sleep(2)
-
-    directory = filesystem.get_directory_client(directory_name)
-    # Retry directory creation with exponential backoff
-    for attempt in range(max_retries):
-        try:
-            directory.create_directory()
-            print(f"Created ADLS directory: {filesystem_name}/{directory_name}")
-            break
-        except ResourceExistsError:
-            print(f"ADLS directory already exists: {filesystem_name}/{directory_name}")
+            print(f"ADLS filesystem already exists: {filesystem_name}", flush=True)
+            filesystem_created = True
             break
         except ResourceNotFoundError as e:
             if attempt < max_retries - 1:
-                print(f"Directory creation attempt {attempt + 1} failed: {e}")
-                print(f"Retrying in {1 + attempt} seconds...")
-                time.sleep(1 + attempt)
+                print(f"Filesystem creation attempt {attempt + 1} failed: {e}", flush=True)
+                print(f"Waiting 3 seconds before retry...", flush=True)
+                time.sleep(3)
             else:
-                print(f"Failed to create directory after {max_retries} attempts")
+                print(f"Failed to create filesystem after {max_retries} attempts", flush=True)
+                raise
+
+    if not filesystem_created:
+        raise RuntimeError("Filesystem was not created or verified to exist")
+
+    # Create a fresh service client after filesystem is ready
+    print(f"Creating fresh client connection to filesystem...", flush=True)
+    service = DataLakeServiceClient.from_connection_string(connection_string)
+    filesystem = service.get_file_system_client(filesystem_name)
+    directory = filesystem.get_directory_client(directory_name)
+
+    # Retry directory creation with extended backoff
+    for attempt in range(max_retries):
+        try:
+            directory.create_directory()
+            print(f"Created ADLS directory: {filesystem_name}/{directory_name}", flush=True)
+            break
+        except ResourceExistsError:
+            print(f"ADLS directory already exists: {filesystem_name}/{directory_name}", flush=True)
+            break
+        except ResourceNotFoundError as e:
+            if attempt < max_retries - 1:
+                print(f"Directory creation attempt {attempt + 1} failed: {e}", flush=True)
+                wait_time = 2 * (attempt + 1)
+                print(f"Waiting {wait_time} seconds before retry...", flush=True)
+                time.sleep(wait_time)
+            else:
+                print(f"Failed to create directory after {max_retries} attempts", flush=True)
                 raise
 
 

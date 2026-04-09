@@ -18,9 +18,9 @@ def main() -> None:
 
     try:
         filesystem.delete_file_system()
-        print(f"Deleted ADLS filesystem: {filesystem_name}")
+        print(f"Deleted ADLS filesystem: {filesystem_name}", flush=True)
     except ResourceNotFoundError:
-        print(f"ADLS filesystem did not exist: {filesystem_name}")
+        print(f"ADLS filesystem did not exist: {filesystem_name}", flush=True)
 
 
 if __name__ == "__main__":

@@ -10,4 +10,8 @@
   <ItemGroup>
     <Content Include="src\**\*.sql" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PostDeploy Include="PostDeploy.sql" />
+  </ItemGroup>
 </Project>

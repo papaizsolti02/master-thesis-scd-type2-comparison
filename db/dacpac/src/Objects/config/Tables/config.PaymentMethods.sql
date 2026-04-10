@@ -13,10 +13,3 @@ CREATE TABLE [config].[PaymentMethods]
     [IsCardBased] BIT NOT NULL
 );
 GO
-
-INSERT INTO [config].[PaymentMethods] ([PaymentMethodCode], [PaymentMethodGroup], [IsCardBased])
-VALUES
-    ('Card', 'Card', 1),
-    ('PayPal', 'Digital Wallet', 0),
-    ('BankTransfer', 'Bank Transfer', 0);
-GO

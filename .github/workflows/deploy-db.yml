@@ -27,7 +27,7 @@ jobs:
 
       - name: Lint SQL files
         run: |
-          sqlfluff lint db/dacpac/src --dialect tsql
+          sqlfluff lint db/dacpac/src --config .sqlfluff
 
   build-dacpac:
     runs-on: ubuntu-latest
@@ -75,4 +75,4 @@ jobs:
           action: publish
           arguments: >-
             /p:BlockOnPossibleDataLoss=true
-            /p:DropObjectsNotInSource=false
+            /p:DropObjectsNotInSource=true

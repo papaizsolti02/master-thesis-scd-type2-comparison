@@ -13,15 +13,3 @@ CREATE TABLE [config].[Countries]
     [PreferredLanguage] NVARCHAR(10) NOT NULL
 );
 GO
-
-INSERT INTO [config].[Countries] ([CountryCode], [CountryName], [PreferredLanguage])
-VALUES
-    ('DE', 'Germany', 'de'),
-    ('FR', 'France', 'fr'),
-    ('GB', 'United Kingdom', 'en'),
-    ('IT', 'Italy', 'it'),
-    ('ES', 'Spain', 'es'),
-    ('NL', 'Netherlands', 'nl'),
-    ('PL', 'Poland', 'pl'),
-    ('RO', 'Romania', 'ro');
-GO

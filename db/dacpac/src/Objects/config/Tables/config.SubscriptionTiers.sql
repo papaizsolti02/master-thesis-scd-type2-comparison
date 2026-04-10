@@ -14,10 +14,3 @@ CREATE TABLE [config].[SubscriptionTiers]
     [IsPaid] BIT NOT NULL
 );
 GO
-
-INSERT INTO [config].[SubscriptionTiers] ([TierCode], [TierName], [TierRank], [IsPaid])
-VALUES
-    ('Free', 'Free', 1, 0),
-    ('Basic', 'Basic', 2, 1),
-    ('Premium', 'Premium', 3, 1);
-GO

@@ -27,6 +27,7 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED BY TARGET THEN
     INSERT ([CountryCode], [CountryName], [PreferredLanguage])
     VALUES ([source].[CountryCode], [source].[CountryName], [source].[PreferredLanguage]);
+GO
 
 MERGE [config].[SubscriptionTiers] AS [target]
 USING
@@ -45,6 +46,7 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED BY TARGET THEN
     INSERT ([TierCode], [TierName], [TierRank], [IsPaid])
     VALUES ([source].[TierCode], [source].[TierName], [source].[TierRank], [source].[IsPaid]);
+GO
 
 MERGE [config].[PaymentMethods] AS [target]
 USING
@@ -62,3 +64,4 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED BY TARGET THEN
     INSERT ([PaymentMethodCode], [PaymentMethodGroup], [IsCardBased])
     VALUES ([source].[PaymentMethodCode], [source].[PaymentMethodGroup], [source].[IsCardBased]);
+GO

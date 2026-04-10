@@ -24,7 +24,6 @@ jobs:
           filters: |
             db_changed:
               - 'db/dacpac/**'
-              - '.github/workflows/deploy-db-dev.yml'
 
   lint-sql:
     runs-on: ubuntu-latest

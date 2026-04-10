@@ -1,6 +1,6 @@
 CREATE TABLE [dw].[DimUser]
 (
-    [DimUserKey] BIGINT IDENTITY(1,1) NOT NULL,
+    [DimUserKey] BIGINT IDENTITY (1, 1) NOT NULL,
     [UserID] BIGINT NOT NULL,
     [FirstName] NVARCHAR(120) NOT NULL,
     [LastName] NVARCHAR(120) NOT NULL,

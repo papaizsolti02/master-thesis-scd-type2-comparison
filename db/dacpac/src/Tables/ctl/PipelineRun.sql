@@ -1,6 +1,6 @@
 CREATE TABLE [ctl].[PipelineRun]
 (
-    [PipelineRunId] BIGINT IDENTITY(1,1) NOT NULL,
+    [PipelineRunId] BIGINT IDENTITY (1, 1) NOT NULL,
     [BatchId] NVARCHAR(64) NOT NULL,
     [EnvironmentName] NVARCHAR(16) NOT NULL,
     [StartedAt] DATETIME2(3) NOT NULL CONSTRAINT [DF_PipelineRun_StartedAt] DEFAULT SYSUTCDATETIME(),

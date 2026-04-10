@@ -1,4 +1,4 @@
-CREATE PROCEDURE [dw].[sp_Load_DimUser_SCD2]
+CREATE PROCEDURE [dw].[usp_Load_DimUser_SCD2]
     @BatchId NVARCHAR(64)
 AS
 BEGIN
@@ -7,8 +7,8 @@ BEGIN
     UPDATE d
     SET d.[IsCurrent] = 0,
         d.[EffectiveTo] = SYSUTCDATETIME()
-    FROM [dw].[DimUser] d
-    INNER JOIN [stg].[Users_Clean] s
+    FROM [dw].[DimUser] AS d
+    INNER JOIN [stg].[Users_Clean] AS s
         ON d.[UserID] = s.[UserID]
        AND d.[IsCurrent] = 1
     WHERE s.[BatchId] = @BatchId
@@ -52,12 +52,12 @@ BEGIN
         s.[ContentLanguage],
         s.[PlanAddons],
         s.[HashDiff],
-        SYSUTCDATETIME(),
-        NULL,
-        1,
-        @BatchId
-    FROM [stg].[Users_Clean] s
-    LEFT JOIN [dw].[DimUser] d
+        SYSUTCDATETIME() AS [EffectiveFrom],
+        NULL AS [EffectiveTo],
+        1 AS [IsCurrent],
+        @BatchId AS [BatchId]
+    FROM [stg].[Users_Clean] AS s
+    LEFT JOIN [dw].[DimUser] AS d
         ON s.[UserID] = d.[UserID]
        AND d.[IsCurrent] = 1
     WHERE s.[BatchId] = @BatchId

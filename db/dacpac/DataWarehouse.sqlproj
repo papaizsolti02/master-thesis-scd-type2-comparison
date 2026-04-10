@@ -1,7 +1,7 @@
 <Project Sdk="MSBuild.Sdk.SqlProj/3.2.0">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <SqlServerVersion>SqlAzureV12</SqlServerVersion>
+    <SqlServerVersion>SqlAzure</SqlServerVersion>
     <RunSqlCodeAnalysis>True</RunSqlCodeAnalysis>
     <TreatTSqlWarningsAsErrors>False</TreatTSqlWarningsAsErrors>
     <DacpacName>DataWarehouse</DacpacName>

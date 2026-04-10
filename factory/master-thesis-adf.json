@@ -1,0 +1,9 @@
+{
+	"name": "master-thesis-adf",
+	"location": "germanywestcentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "f2ab795c-52b7-4159-afa8-2c51a28559fe",
+		"tenantId": "5a4863ed-40c8-4fd5-8298-fbfdb7f13095"
+	}
+}

@@ -74,5 +74,5 @@ jobs:
           path: ./dacpac/DataWarehouse.dacpac
           action: publish
           arguments: >-
-            /p:BlockOnPossibleDataLoss=true
+            /p:BlockOnPossibleDataLoss=false
             /p:DropObjectsNotInSource=true

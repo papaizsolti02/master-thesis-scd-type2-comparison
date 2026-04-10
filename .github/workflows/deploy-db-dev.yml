@@ -50,8 +50,8 @@ jobs:
 
   build-dacpac:
     runs-on: ubuntu-latest
-    needs: lint-sql
-    if: needs.lint-sql.result == 'success'
+    needs: [detect-db-changes, lint-sql]
+    if: needs.lint-sql.result == 'success' && needs.detect-db-changes.outputs.db_changed == 'true'
 
     steps:
       - name: Checkout

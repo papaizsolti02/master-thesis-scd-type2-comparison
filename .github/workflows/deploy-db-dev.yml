@@ -4,13 +4,31 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [ develop ]
-    paths:
-      - db/dacpac/**
-      - .github/workflows/deploy-db-dev.yml
 
 jobs:
+  detect-db-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      db_changed: ${{ steps.filter.outputs.db_changed }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect DB object changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            db_changed:
+              - 'db/dacpac/**'
+              - '.github/workflows/deploy-db-dev.yml'
   lint-sql:
     runs-on: ubuntu-latest
+    needs: detect-db-changes
+    if: needs.detect-db-changes.outputs.db_changed == 'true'
 
     steps:
       - name: Checkout
@@ -33,6 +51,7 @@ jobs:
   build-dacpac:
     runs-on: ubuntu-latest
     needs: lint-sql
+    if: needs.lint-sql.result == 'success'
 
     steps:
       - name: Checkout
@@ -56,17 +75,28 @@ jobs:
 
   deploy-dev:
     runs-on: windows-latest
-    needs: build-dacpac
+    needs: [detect-db-changes, lint-sql, build-dacpac]
+    if: always()
     environment: dev
 
     steps:
+      - name: Validate prerequisites when DB changed
+        if: needs.detect-db-changes.outputs.db_changed == 'true'
+        shell: pwsh
+        run: |
+          if ("${{ needs.lint-sql.result }}" -ne "success" -or "${{ needs.build-dacpac.result }}" -ne "success") {
+            throw "DB changes detected but lint/build did not succeed."
+          }
+
       - name: Download DACPAC Artifact
+        if: needs.detect-db-changes.outputs.db_changed == 'true'
         uses: actions/download-artifact@v5
         with:
           name: dw-dacpac
           path: ./dacpac
 
       - name: Publish DACPAC to Dev
+        if: needs.detect-db-changes.outputs.db_changed == 'true'
         uses: azure/sql-action@v2.3
         env:
           CONNECTION_STRING: Server=tcp:${{ secrets.DB_SERVER }},1433;Initial Catalog=${{ secrets.DEV_DB_NAME }};Persist Security Info=False;User ID=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
@@ -77,3 +107,7 @@ jobs:
           arguments: >-
             /p:BlockOnPossibleDataLoss=false
             /p:DropObjectsNotInSource=true
+
+      - name: No DB changes - skip deploy
+        if: needs.detect-db-changes.outputs.db_changed != 'true'
+        run: echo "No db/dacpac changes detected. Skipping dev deployment."

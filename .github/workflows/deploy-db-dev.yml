@@ -3,7 +3,7 @@ name: Deploy DB DACPAC to Dev
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ main ]
+    branches: [ develop ]
     paths:
       - db/dacpac/**
       - .github/workflows/deploy-db-dev.yml

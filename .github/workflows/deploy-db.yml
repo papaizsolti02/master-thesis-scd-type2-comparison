@@ -54,7 +54,7 @@ jobs:
           path: dacpac_out/*.dacpac
 
   deploy-prod:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build-dacpac
     environment: prod
 

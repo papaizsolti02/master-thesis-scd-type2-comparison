@@ -1,0 +1,39 @@
+----------------------------------------------------------------------
+-- Author: Csaba-Zsolt Papai
+-- Date: 2026-04-10
+-- Name: stage.Users
+-- Description: Stores transformed user data and staging metadata.
+-- Version: 1.0
+----------------------------------------------------------------------
+CREATE TABLE [stage].[Users]
+(
+    [Id] INT IDENTITY (1, 1) PRIMARY KEY,
+    [FullName] NVARCHAR(241) NULL,
+    [FirstName] NVARCHAR(120) NULL,
+    [LastName] NVARCHAR(120) NULL,
+    [Email] NVARCHAR(320) NULL,
+    [Username] NVARCHAR(120) NULL,
+    [DateOfBirth] DATE NULL,
+    [YearOfBirth] VARCHAR(4) NULL,
+    [MonthOfBirth] VARCHAR(20) NULL,
+    [DayOfBirth] VARCHAR(2) NULL,
+    [RegistrationDate] DATE NULL,
+    [Country] NVARCHAR(100) NULL,
+    [CountryCode] CHAR(2) NULL,
+    [City] NVARCHAR(120) NULL,
+    [Gender] NVARCHAR(20) NULL,
+    [AccountCreatedVia] NVARCHAR(40) NULL,
+    [ReferralSource] NVARCHAR(40) NULL,
+    [SubscriptionTier] NVARCHAR(40) NULL,
+    [BillingCycle] NVARCHAR(40) NULL,
+    [PaymentMethod] NVARCHAR(40) NULL,
+    [AutoRenew] NVARCHAR(3) NULL,
+    [MarketingConsent] NVARCHAR(3) NULL,
+    [PreferredLanguage] NVARCHAR(10) NULL,
+    [ContentLanguage] NVARCHAR(10) NULL,
+    [PlanAddons] NVARCHAR(100) NULL,
+    [LastRefreshedDate] DATETIME NULL,
+    [Hashdata] VARCHAR(MAX) NULL,
+    [Rowhash] VARBINARY(6000) NULL
+);
+GO

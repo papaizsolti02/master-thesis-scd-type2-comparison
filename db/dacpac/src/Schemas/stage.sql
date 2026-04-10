@@ -1,9 +1,9 @@
 ----------------------------------------------------------------------
 -- Author: Csaba-Zsolt Papai
 -- Date: 2026-04-10
--- Name: schema.raw
--- Description: Creates the raw schema for landing tables.
+-- Name: schema.stage
+-- Description: Creates the stage schema for transformation tables.
 -- Version: 1.0
 ----------------------------------------------------------------------
-CREATE SCHEMA [raw];
+CREATE SCHEMA [stage];
 GO

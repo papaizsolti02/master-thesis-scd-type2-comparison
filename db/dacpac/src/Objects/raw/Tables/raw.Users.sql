@@ -1,6 +1,13 @@
-CREATE TABLE [stg].[Users_Raw]
+----------------------------------------------------------------------
+-- Author: Csaba-Zsolt Papai
+-- Date: 2026-04-10
+-- Name: raw.Users
+-- Description: Stores raw user snapshot data from the generator.
+-- Version: 1.0
+----------------------------------------------------------------------
+CREATE TABLE [raw].[Users]
 (
-    [UserID] BIGINT NOT NULL,
+    [Id] INT IDENTITY (1, 1) PRIMARY KEY,
     [FirstName] NVARCHAR(120) NULL,
     [LastName] NVARCHAR(120) NULL,
     [Email] NVARCHAR(320) NULL,
@@ -20,14 +27,5 @@ CREATE TABLE [stg].[Users_Raw]
     [PreferredLanguage] NVARCHAR(10) NULL,
     [ContentLanguage] NVARCHAR(10) NULL,
     [PlanAddons] NVARCHAR(100) NULL,
-    [TenureDays] INT NULL,
-    [SnapshotDate] DATE NULL,
-    [DayNumber] INT NULL,
-    [BatchId] NVARCHAR(64) NULL,
-    [IngestedAt] DATETIME2(3) NOT NULL CONSTRAINT [DF_Users_Raw_IngestedAt] DEFAULT SYSUTCDATETIME()
 );
-GO
-
-CREATE INDEX [IX_Users_Raw_UserID_BatchId]
-    ON [stg].[Users_Raw] ([UserID], [BatchId]);
 GO

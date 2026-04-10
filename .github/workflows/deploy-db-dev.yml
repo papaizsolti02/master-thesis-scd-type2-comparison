@@ -67,7 +67,7 @@ jobs:
           path: ./dacpac
 
       - name: Publish DACPAC to Dev
-        uses: microsoft/sql-action@v2.3
+        uses: azure/sql-action@v2.3
         env:
           CONNECTION_STRING: Server=tcp:${{ secrets.DB_SERVER }},1433;Initial Catalog=${{ secrets.DEV_DB_NAME }};Persist Security Info=False;User ID=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
         with:

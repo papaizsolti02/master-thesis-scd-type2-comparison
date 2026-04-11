@@ -227,10 +227,10 @@ BEGIN
         BEGIN
             BEGIN TRY
                 SELECT
-                    @CpuDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_cpu_time]) * rs.[count_executions]) / 1000.0 AS BIGINT),
-                    @LogicalReadsDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_logical_io_reads]) * rs.[count_executions]) AS BIGINT),
-                    @PhysicalReadsDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_physical_io_reads]) * rs.[count_executions]) AS BIGINT),
-                    @WritesDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_logical_io_writes]) * rs.[count_executions]) AS BIGINT)
+                    @CpuDelta = CAST(SUM(CAST(rs.[avg_cpu_time] AS DECIMAL(38, 6)) * rs.[count_executions]) / 1000.0 AS BIGINT),
+                    @LogicalReadsDelta = CAST(SUM(CAST(rs.[avg_logical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @PhysicalReadsDelta = CAST(SUM(CAST(rs.[avg_physical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @WritesDelta = CAST(SUM(CAST(rs.[avg_logical_io_writes] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT)
                 FROM
                     [sys].[query_store_query] AS q
                 INNER JOIN [sys].[query_store_plan] AS p
@@ -295,10 +295,10 @@ BEGIN
         BEGIN
             BEGIN TRY
                 SELECT
-                    @CpuDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_cpu_time]) * rs.[count_executions]) / 1000.0 AS BIGINT),
-                    @LogicalReadsDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_logical_io_reads]) * rs.[count_executions]) AS BIGINT),
-                    @PhysicalReadsDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_physical_io_reads]) * rs.[count_executions]) AS BIGINT),
-                    @WritesDelta = CAST(SUM(CONVERT(DECIMAL(38, 6), rs.[avg_logical_io_writes]) * rs.[count_executions]) AS BIGINT)
+                    @CpuDelta = CAST(SUM(CAST(rs.[avg_cpu_time] AS DECIMAL(38, 6)) * rs.[count_executions]) / 1000.0 AS BIGINT),
+                    @LogicalReadsDelta = CAST(SUM(CAST(rs.[avg_logical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @PhysicalReadsDelta = CAST(SUM(CAST(rs.[avg_physical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @WritesDelta = CAST(SUM(CAST(rs.[avg_logical_io_writes] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT)
                 FROM
                     [sys].[query_store_query] AS q
                 INNER JOIN [sys].[query_store_plan] AS p

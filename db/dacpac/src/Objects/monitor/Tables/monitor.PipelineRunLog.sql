@@ -7,6 +7,7 @@
 -- -----------------------------------------------------------------------------
 CREATE TABLE [monitor].[PipelineRunLog]
 (
+    [Id] BIGINT IDENTITY (1, 1) NOT NULL,
     [PipelineRunId] NVARCHAR(128) NOT NULL,
     [PipelineName] NVARCHAR(200) NOT NULL,
     [EnvironmentName] NVARCHAR(20) NULL,
@@ -27,7 +28,7 @@ CREATE TABLE [monitor].[PipelineRunLog]
     [ErrorMessage] NVARCHAR(4000) NULL,
     [CreatedUtc] DATETIME2(3) NOT NULL CONSTRAINT [DF_monitor_PipelineRunLog_CreatedUtc] DEFAULT (SYSUTCDATETIME()),
     [UpdatedUtc] DATETIME2(3) NOT NULL CONSTRAINT [DF_monitor_PipelineRunLog_UpdatedUtc] DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT [PK_monitor_PipelineRunLog] PRIMARY KEY CLUSTERED ([PipelineRunId] ASC),
+    CONSTRAINT [PK_monitor_PipelineRunLog] PRIMARY KEY CLUSTERED ([Id] ASC),
     CONSTRAINT [CK_monitor_PipelineRunLog_Status] CHECK ([Status] IN ('Started', 'Succeeded', 'Failed', 'Cancelled'))
 );
 GO

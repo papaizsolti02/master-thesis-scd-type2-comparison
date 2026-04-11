@@ -7,7 +7,7 @@
 -- -----------------------------------------------------------------------------
 CREATE TABLE [monitor].[PipelineProcedureLog]
 (
-    [PipelineProcedureLogId] BIGINT IDENTITY (1, 1) NOT NULL,
+    [Id] BIGINT IDENTITY (1, 1) NOT NULL,
     [PipelineRunId] NVARCHAR(128) NOT NULL,
     [ProcedureName] SYSNAME NOT NULL,
     [ProcedurePhase] NVARCHAR(20) NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE [monitor].[PipelineProcedureLog]
     [ErrorMessage] NVARCHAR(4000) NULL,
     [CreatedUtc] DATETIME2(3) NOT NULL CONSTRAINT [DF_monitor_PipelineProcedureLog_CreatedUtc] DEFAULT (SYSUTCDATETIME()),
     [UpdatedUtc] DATETIME2(3) NOT NULL CONSTRAINT [DF_monitor_PipelineProcedureLog_UpdatedUtc] DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT [PK_monitor_PipelineProcedureLog] PRIMARY KEY CLUSTERED ([PipelineProcedureLogId] ASC),
+    CONSTRAINT [PK_monitor_PipelineProcedureLog] PRIMARY KEY CLUSTERED ([Id] ASC),
     CONSTRAINT [UQ_monitor_PipelineProcedureLog_Run_Proc] UNIQUE ([PipelineRunId], [ProcedureName]),
     CONSTRAINT [FK_monitor_PipelineProcedureLog_PipelineRunLog] FOREIGN KEY ([PipelineRunId])
         REFERENCES [monitor].[PipelineRunLog] ([PipelineRunId]),

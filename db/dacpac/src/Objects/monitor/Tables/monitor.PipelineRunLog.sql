@@ -15,6 +15,7 @@ CREATE TABLE [monitor].[PipelineRunLog]
     [TriggerType] NVARCHAR(50) NULL,
     [TriggerName] NVARCHAR(200) NULL,
     [SourceFileName] NVARCHAR(260) NULL,
+    [SCD2Method] NVARCHAR(100) NULL,
     [RValue] DECIMAL(12, 6) NULL,
     [CValue] DECIMAL(12, 6) NULL,
     [StartUtc] DATETIME2(3) NOT NULL,
@@ -90,6 +91,12 @@ EXEC sys.sp_addextendedproperty
     @level0type = N'SCHEMA', @level0name = N'monitor',
     @level1type = N'TABLE', @level1name = N'PipelineRunLog',
     @level2type = N'COLUMN', @level2name = N'CValue';
+GO
+EXEC sys.sp_addextendedproperty
+    @name = N'MS_Description', @value = N'SCD type 2 method used by the pipeline run.',
+    @level0type = N'SCHEMA', @level0name = N'monitor',
+    @level1type = N'TABLE', @level1name = N'PipelineRunLog',
+    @level2type = N'COLUMN', @level2name = N'SCD2Method';
 GO
 EXEC sys.sp_addextendedproperty
     @name = N'MS_Description', @value = N'Pipeline start UTC timestamp.',

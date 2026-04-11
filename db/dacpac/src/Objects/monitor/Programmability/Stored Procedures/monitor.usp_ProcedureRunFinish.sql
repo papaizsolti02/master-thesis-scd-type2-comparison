@@ -5,6 +5,7 @@
 -- Description: Finalizes procedure-level monitoring row with detailed metrics.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [monitor].[usp_ProcedureRunFinish]
     @PipelineRunId NVARCHAR(128),
     @ProcedureName SYSNAME,
@@ -125,7 +126,7 @@ BEGIN
             p.[CpuTimeMs] = @CpuTimeMs,
             p.[LogicalReads] = @LogicalReads,
             p.[PhysicalReads] = @PhysicalReads,
-            p.[Writes] = @Writes,
+            p.[PageWrites] = @Writes,
             p.[ErrorNumber] = @ErrorNumber,
             p.[ErrorMessage] = @NormalizedErrorMessage,
             p.[UpdatedUtc] = @NowUtc

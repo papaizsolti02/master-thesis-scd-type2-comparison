@@ -5,6 +5,7 @@
 -- Description: Creates or resets pipeline-level monitoring row at run start.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [monitor].[usp_PipelineRunStart]
     @PipelineRunId NVARCHAR(128),
     @PipelineName NVARCHAR(200),

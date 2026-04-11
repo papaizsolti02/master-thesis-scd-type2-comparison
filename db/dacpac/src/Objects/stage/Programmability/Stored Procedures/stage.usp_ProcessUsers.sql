@@ -5,6 +5,7 @@
 -- Description: Truncates stage.Users, loads from raw.Users, and processes data.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [stage].[usp_ProcessUsers] -- noqa: 
     @PipelineRunId NVARCHAR(128) = NULL
 AS

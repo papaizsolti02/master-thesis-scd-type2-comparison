@@ -5,5 +5,6 @@
 -- Description: Creates the raw schema for landing tables.
 -- Version: 1.0
 -- ----------------------------------------------------------------------
+
 CREATE SCHEMA [raw];
 GO

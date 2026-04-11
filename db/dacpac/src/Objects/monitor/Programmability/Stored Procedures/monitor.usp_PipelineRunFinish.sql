@@ -5,6 +5,7 @@
 -- Description: Finalizes pipeline-level monitoring row with status and metrics.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [monitor].[usp_PipelineRunFinish]
     @PipelineRunId NVARCHAR(128),
     @Status NVARCHAR(20),

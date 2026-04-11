@@ -5,6 +5,7 @@
 -- Description: Creates or resets procedure-level monitoring row at proc start.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [monitor].[usp_ProcedureRunStart]
     @PipelineRunId NVARCHAR(128),
     @ProcedureName SYSNAME,
@@ -66,7 +67,7 @@ BEGIN
             p.[CpuTimeMs] = NULL,
             p.[LogicalReads] = NULL,
             p.[PhysicalReads] = NULL,
-            p.[Writes] = NULL,
+            p.[PageWrites] = NULL,
             p.[ErrorNumber] = NULL,
             p.[ErrorMessage] = NULL,
             p.[UpdatedUtc] = @NowUtc

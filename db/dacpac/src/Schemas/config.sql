@@ -5,5 +5,6 @@
 -- Description: Creates the config schema for lookup and seed tables.
 -- Version: 1.0
 -- ----------------------------------------------------------------------
+
 CREATE SCHEMA [config];
 GO

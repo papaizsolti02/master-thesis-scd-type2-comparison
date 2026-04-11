@@ -24,8 +24,6 @@ def simulate(seed=1, N_initial=1000000, save_snapshots=True):
     if save_snapshots:
         df["SnapshotDate"] = start_date.strftime("%Y-%m-%d")
         df["DayNumber"] = 0
-        df["r"] = None
-        df["c"] = None
         df.to_csv(OUTPUT_DIR / "users_day000.csv", index=False)
     print(f"Day   0 | Initial snapshot | Active users: {len(df):>9,}", flush=True)
 
@@ -52,8 +50,6 @@ def simulate(seed=1, N_initial=1000000, save_snapshots=True):
         snap_date = (start_date + timedelta(days=day)).strftime("%Y-%m-%d")
         df["SnapshotDate"] = snap_date
         df["DayNumber"] = day
-        df["r"] = r
-        df["c"] = c
 
         print(
             f"Day {day:>3} | r={r:.3f} c={c:.2f} | "

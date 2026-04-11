@@ -5,5 +5,6 @@
 -- Description: Creates the stage schema for transformation tables.
 -- Version: 1.0
 -- ----------------------------------------------------------------------
+
 CREATE SCHEMA [stage];
 GO

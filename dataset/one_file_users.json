@@ -1,0 +1,134 @@
+{
+	"name": "one_file_users",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_blob_users",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"pfileName": {
+				"type": "string",
+				"defaultValue": "users_day000.csv"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().pfileName",
+					"type": "Expression"
+				},
+				"folderPath": "data",
+				"container": "master-thesis"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "UserID",
+				"type": "String"
+			},
+			{
+				"name": "FirstName",
+				"type": "String"
+			},
+			{
+				"name": "LastName",
+				"type": "String"
+			},
+			{
+				"name": "Email",
+				"type": "String"
+			},
+			{
+				"name": "Username",
+				"type": "String"
+			},
+			{
+				"name": "DateOfBirth",
+				"type": "String"
+			},
+			{
+				"name": "RegistrationDate",
+				"type": "String"
+			},
+			{
+				"name": "Country",
+				"type": "String"
+			},
+			{
+				"name": "City",
+				"type": "String"
+			},
+			{
+				"name": "Gender",
+				"type": "String"
+			},
+			{
+				"name": "AccountCreatedVia",
+				"type": "String"
+			},
+			{
+				"name": "ReferralSource",
+				"type": "String"
+			},
+			{
+				"name": "SubscriptionTier",
+				"type": "String"
+			},
+			{
+				"name": "BillingCycle",
+				"type": "String"
+			},
+			{
+				"name": "PaymentMethod",
+				"type": "String"
+			},
+			{
+				"name": "AutoRenew",
+				"type": "String"
+			},
+			{
+				"name": "MarketingConsent",
+				"type": "String"
+			},
+			{
+				"name": "PreferredLanguage",
+				"type": "String"
+			},
+			{
+				"name": "ContentLanguage",
+				"type": "String"
+			},
+			{
+				"name": "PlanAddons",
+				"type": "String"
+			},
+			{
+				"name": "TenureDays",
+				"type": "String"
+			},
+			{
+				"name": "SnapshotDate",
+				"type": "String"
+			},
+			{
+				"name": "DayNumber",
+				"type": "String"
+			},
+			{
+				"name": "r",
+				"type": "String"
+			},
+			{
+				"name": "c",
+				"type": "String"
+			}
+		]
+	}
+}

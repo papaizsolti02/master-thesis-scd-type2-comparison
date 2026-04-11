@@ -1,0 +1,98 @@
+{
+	"name": "raw_users_table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_sql_db_dev",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Id",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "FirstName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "LastName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Email",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Username",
+				"type": "nvarchar"
+			},
+			{
+				"name": "DateOfBirth",
+				"type": "date"
+			},
+			{
+				"name": "RegistrationDate",
+				"type": "date"
+			},
+			{
+				"name": "Country",
+				"type": "nvarchar"
+			},
+			{
+				"name": "City",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Gender",
+				"type": "nvarchar"
+			},
+			{
+				"name": "AccountCreatedVia",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ReferralSource",
+				"type": "nvarchar"
+			},
+			{
+				"name": "SubscriptionTier",
+				"type": "nvarchar"
+			},
+			{
+				"name": "BillingCycle",
+				"type": "nvarchar"
+			},
+			{
+				"name": "PaymentMethod",
+				"type": "nvarchar"
+			},
+			{
+				"name": "AutoRenew",
+				"type": "bit"
+			},
+			{
+				"name": "MarketingConsent",
+				"type": "bit"
+			},
+			{
+				"name": "PreferredLanguage",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ContentLanguage",
+				"type": "nvarchar"
+			},
+			{
+				"name": "PlanAddons",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "raw",
+			"table": "Users"
+		}
+	}
+}

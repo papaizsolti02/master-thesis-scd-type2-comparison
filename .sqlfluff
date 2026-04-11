@@ -2,6 +2,7 @@
 dialect = tsql
 max_line_length = 120
 templater = raw
+ignore = parsing
 exclude_rules = LT02, LT05, AL03
 
 [sqlfluff:rules]

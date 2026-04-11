@@ -5,6 +5,7 @@
 -- Description: Creates or resets procedure-level monitoring row at proc start.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [monitor].[usp_ProcedureRunStart]
     @PipelineRunId NVARCHAR(128),
     @ProcedureName SYSNAME,
@@ -18,6 +19,7 @@ BEGIN
     DECLARE @NormalizedPipelineRunId NVARCHAR(128) = NULLIF(TRIM(@PipelineRunId), '');
     DECLARE @NormalizedProcedureName SYSNAME = NULLIF(TRIM(@ProcedureName), '');
     DECLARE @NormalizedProcedurePhase NVARCHAR(20) = NULLIF(TRIM(@ProcedurePhase), '');
+    DECLARE @PipelineRunLogId BIGINT = NULL;
 
     IF @NormalizedPipelineRunId IS NULL
     BEGIN
@@ -35,13 +37,13 @@ BEGIN
         THROW 51032, 'ProcedurePhase must be one of: Stage, Merge, Other.', 1;
     END;
 
-    IF NOT EXISTS (
-        SELECT 1
-        FROM
-            [monitor].[PipelineRunLog]
-        WHERE
-            [PipelineRunId] = @NormalizedPipelineRunId
-    )
+    SELECT @PipelineRunLogId = p.[Id]
+    FROM
+        [monitor].[PipelineRunLog] AS p
+    WHERE
+        p.[PipelineRunId] = @NormalizedPipelineRunId;
+
+    IF @PipelineRunLogId IS NULL
     BEGIN
         THROW 51002, 'PipelineRunId not found in monitor.PipelineRunLog. Log pipeline start first.', 1;
     END;
@@ -65,19 +67,19 @@ BEGIN
             p.[CpuTimeMs] = NULL,
             p.[LogicalReads] = NULL,
             p.[PhysicalReads] = NULL,
-            p.[Writes] = NULL,
+            p.[PageWrites] = NULL,
             p.[ErrorNumber] = NULL,
             p.[ErrorMessage] = NULL,
             p.[UpdatedUtc] = @NowUtc
         FROM [monitor].[PipelineProcedureLog] AS p WITH (UPDLOCK, HOLDLOCK)
-        WHERE p.[PipelineRunId] = @NormalizedPipelineRunId
+        WHERE p.[PipelineRunLogId] = @PipelineRunLogId
             AND p.[ProcedureName] = @NormalizedProcedureName;
 
         IF @@ROWCOUNT = 0
         BEGIN
             INSERT INTO [monitor].[PipelineProcedureLog]
             (
-                [PipelineRunId],
+                [PipelineRunLogId],
                 [ProcedureName],
                 [ProcedurePhase],
                 [StartUtc],
@@ -86,7 +88,7 @@ BEGIN
             )
             VALUES
             (
-                @NormalizedPipelineRunId,
+                @PipelineRunLogId,
                 @NormalizedProcedureName,
                 @NormalizedProcedurePhase,
                 @NowUtc,

@@ -5,6 +5,7 @@
 -- Description: Creates or resets pipeline-level monitoring row at run start.
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
+
 CREATE PROCEDURE [monitor].[usp_PipelineRunStart]
     @PipelineRunId NVARCHAR(128),
     @PipelineName NVARCHAR(200),
@@ -13,7 +14,8 @@ CREATE PROCEDURE [monitor].[usp_PipelineRunStart]
     @TriggerName NVARCHAR(200) = NULL,
     @SourceFileName NVARCHAR(260) = NULL,
     @RValue DECIMAL(12, 6) = NULL,
-    @CValue DECIMAL(12, 6) = NULL
+    @CValue DECIMAL(12, 6) = NULL,
+    @SCD2Method NVARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -26,11 +28,9 @@ BEGIN
     DECLARE @NormalizedTriggerType NVARCHAR(50) = NULLIF(TRIM(@TriggerType), '');
     DECLARE @NormalizedTriggerName NVARCHAR(200) = NULLIF(TRIM(@TriggerName), '');
     DECLARE @NormalizedSourceFileName NVARCHAR(260) = NULLIF(TRIM(@SourceFileName), '');
+    DECLARE @NormalizedSCD2Method NVARCHAR(50) = NULLIF(TRIM(@SCD2Method), '');
 
     IF @NormalizedPipelineRunId IS NULL
-    BEGIN
-        THROW 51010, 'PipelineRunId is required.', 1;
-    END;
 
     IF @NormalizedPipelineName IS NULL
     BEGIN
@@ -38,9 +38,9 @@ BEGIN
     END;
 
     IF @NormalizedEnvironmentName IS NOT NULL
-       AND @NormalizedEnvironmentName NOT IN ('dev', 'prod', 'test', 'qa')
+       AND @NormalizedEnvironmentName NOT IN ('Development', 'Production', 'Testing', 'QA')
     BEGIN
-        THROW 51012, 'EnvironmentName must be one of: dev, test, qa, prod.', 1;
+        THROW 51012, 'EnvironmentName must be one of: Development, Production, Testing, QA.', 1;
     END;
 
     BEGIN TRY
@@ -55,14 +55,12 @@ BEGIN
             p.[SourceFileName] = @NormalizedSourceFileName,
             p.[RValue] = @RValue,
             p.[CValue] = @CValue,
+            p.[SCD2Method] = @NormalizedSCD2Method,
             p.[StartUtc] = @NowUtc,
             p.[EndUtc] = NULL,
             p.[DurationMs] = NULL,
             p.[DurationMinutes] = NULL,
             p.[Status] = 'Started',
-            p.[RowsRead] = NULL,
-            p.[RowsWritten] = NULL,
-            p.[RowsCopied] = NULL,
             p.[ErrorCode] = NULL,
             p.[ErrorMessage] = NULL,
             p.[UpdatedUtc] = @NowUtc
@@ -81,6 +79,7 @@ BEGIN
                 [SourceFileName],
                 [RValue],
                 [CValue],
+                [SCD2Method],
                 [StartUtc],
                 [Status],
                 [UpdatedUtc]
@@ -95,6 +94,7 @@ BEGIN
                 @NormalizedSourceFileName,
                 @RValue,
                 @CValue,
+                @NormalizedSCD2Method,
                 @NowUtc,
                 'Started',
                 @NowUtc

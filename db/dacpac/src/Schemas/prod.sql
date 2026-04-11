@@ -5,5 +5,6 @@
 -- Description: Creates the prod schema for SCD type 2 tables.
 -- Version: 1.0
 -- ----------------------------------------------------------------------
+
 CREATE SCHEMA [prod];
 GO

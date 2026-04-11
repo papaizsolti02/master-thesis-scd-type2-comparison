@@ -6,7 +6,7 @@
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
 
-CREATE PROCEDURE [prod].[usp_MergeUsers] -- noqa: 
+CREATE PROCEDURE [prod].[usp_MergeUsers]
     @PipelineRunId NVARCHAR(128) = NULL
 AS
 BEGIN
@@ -26,14 +26,9 @@ BEGIN
     DECLARE @RowsUpdated BIGINT = 0;
     DECLARE @RowsExpired BIGINT = 0;
 
-    DECLARE @CpuStart BIGINT = NULL;
-    DECLARE @CpuEnd BIGINT = NULL;
-    DECLARE @LogicalReadsStart BIGINT = NULL;
-    DECLARE @LogicalReadsEnd BIGINT = NULL;
-    DECLARE @PhysicalReadsStart BIGINT = NULL;
-    DECLARE @PhysicalReadsEnd BIGINT = NULL;
-    DECLARE @WritesStart BIGINT = NULL;
-    DECLARE @WritesEnd BIGINT = NULL;
+    DECLARE @ProcStartUtc DATETIME2(3) = SYSUTCDATETIME();
+    DECLARE @ProcEndUtc DATETIME2(3) = NULL;
+    DECLARE @ProcObjectId INT = OBJECT_ID(N'[prod].[usp_MergeUsers]');
 
     DECLARE @CpuDelta BIGINT = NULL;
     DECLARE @LogicalReadsDelta BIGINT = NULL;
@@ -52,16 +47,6 @@ BEGIN
     BEGIN
         THROW 50102, 'Required table [prod].[Users] does not exist.', 1;
     END;
-
-    SELECT
-        @CpuStart = s.[cpu_time],
-        @LogicalReadsStart = s.[logical_reads],
-        @PhysicalReadsStart = s.[reads],
-        @WritesStart = s.[writes]
-    FROM
-        [sys].[dm_exec_sessions] AS s
-    WHERE
-        s.[session_id] = @@SPID;
 
     IF @NormalizedPipelineRunId IS NOT NULL
     BEGIN
@@ -232,18 +217,40 @@ BEGIN
 
         COMMIT TRAN;
 
-        SELECT
-            @CpuEnd = s.[cpu_time],
-            @LogicalReadsEnd = s.[logical_reads],
-            @PhysicalReadsEnd = s.[reads],
-            @WritesEnd = s.[writes]
-        FROM [sys].[dm_exec_sessions] AS s
-        WHERE s.[session_id] = @@SPID;
+        SET @ProcEndUtc = SYSUTCDATETIME();
 
-        SET @CpuDelta = CASE WHEN @CpuStart IS NULL OR @CpuEnd IS NULL THEN NULL ELSE @CpuEnd - @CpuStart END;
-        SET @LogicalReadsDelta = CASE WHEN @LogicalReadsStart IS NULL OR @LogicalReadsEnd IS NULL THEN NULL ELSE @LogicalReadsEnd - @LogicalReadsStart END;
-        SET @PhysicalReadsDelta = CASE WHEN @PhysicalReadsStart IS NULL OR @PhysicalReadsEnd IS NULL THEN NULL ELSE @PhysicalReadsEnd - @PhysicalReadsStart END;
-        SET @WritesDelta = CASE WHEN @WritesStart IS NULL OR @WritesEnd IS NULL THEN NULL ELSE @WritesEnd - @WritesStart END;
+        IF EXISTS (
+            SELECT 1
+            FROM [sys].[database_query_store_options] AS qo
+            WHERE qo.[actual_state_desc] IN ('READ_WRITE', 'READ_ONLY')
+        )
+        BEGIN
+            BEGIN TRY
+                SELECT
+                    @CpuDelta = CAST(SUM(CAST(rs.[avg_cpu_time] AS DECIMAL(38, 6)) * rs.[count_executions]) / 1000.0 AS BIGINT),
+                    @LogicalReadsDelta = CAST(SUM(CAST(rs.[avg_logical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @PhysicalReadsDelta = CAST(SUM(CAST(rs.[avg_physical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @WritesDelta = CAST(SUM(CAST(rs.[avg_logical_io_writes] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT)
+                FROM
+                    [sys].[query_store_query] AS q
+                INNER JOIN [sys].[query_store_plan] AS p
+                    ON q.[query_id] = p.[query_id]
+                INNER JOIN [sys].[query_store_runtime_stats] AS rs
+                    ON p.[plan_id] = rs.[plan_id]
+                INNER JOIN [sys].[query_store_runtime_stats_interval] AS rsi
+                    ON rs.[runtime_stats_interval_id] = rsi.[runtime_stats_interval_id]
+                WHERE
+                q.[object_id] = @ProcObjectId
+                    AND rsi.[start_time] < @ProcEndUtc
+                    AND rsi.[end_time] > @ProcStartUtc;
+            END TRY
+            BEGIN CATCH
+                SET @CpuDelta = NULL;
+                SET @LogicalReadsDelta = NULL;
+                SET @PhysicalReadsDelta = NULL;
+                SET @WritesDelta = NULL;
+            END CATCH;
+        END;
 
         IF @NormalizedPipelineRunId IS NOT NULL
         BEGIN
@@ -278,18 +285,40 @@ BEGIN
             ROLLBACK TRAN;
         END;
 
-        SELECT
-            @CpuEnd = s.[cpu_time],
-            @LogicalReadsEnd = s.[logical_reads],
-            @PhysicalReadsEnd = s.[reads],
-            @WritesEnd = s.[writes]
-        FROM [sys].[dm_exec_sessions] AS s
-        WHERE s.[session_id] = @@SPID;
+        SET @ProcEndUtc = SYSUTCDATETIME();
 
-        SET @CpuDelta = CASE WHEN @CpuStart IS NULL OR @CpuEnd IS NULL THEN NULL ELSE @CpuEnd - @CpuStart END;
-        SET @LogicalReadsDelta = CASE WHEN @LogicalReadsStart IS NULL OR @LogicalReadsEnd IS NULL THEN NULL ELSE @LogicalReadsEnd - @LogicalReadsStart END;
-        SET @PhysicalReadsDelta = CASE WHEN @PhysicalReadsStart IS NULL OR @PhysicalReadsEnd IS NULL THEN NULL ELSE @PhysicalReadsEnd - @PhysicalReadsStart END;
-        SET @WritesDelta = CASE WHEN @WritesStart IS NULL OR @WritesEnd IS NULL THEN NULL ELSE @WritesEnd - @WritesStart END;
+        IF EXISTS (
+            SELECT 1
+            FROM [sys].[database_query_store_options] AS qo
+            WHERE qo.[actual_state_desc] IN ('READ_WRITE', 'READ_ONLY')
+        )
+        BEGIN
+            BEGIN TRY
+                SELECT
+                    @CpuDelta = CAST(SUM(CAST(rs.[avg_cpu_time] AS DECIMAL(38, 6)) * rs.[count_executions]) / 1000.0 AS BIGINT),
+                    @LogicalReadsDelta = CAST(SUM(CAST(rs.[avg_logical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @PhysicalReadsDelta = CAST(SUM(CAST(rs.[avg_physical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
+                    @WritesDelta = CAST(SUM(CAST(rs.[avg_logical_io_writes] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT)
+                FROM
+                    [sys].[query_store_query] AS q
+                INNER JOIN [sys].[query_store_plan] AS p
+                    ON q.[query_id] = p.[query_id]
+                INNER JOIN [sys].[query_store_runtime_stats] AS rs
+                    ON p.[plan_id] = rs.[plan_id]
+                INNER JOIN [sys].[query_store_runtime_stats_interval] AS rsi
+                    ON rs.[runtime_stats_interval_id] = rsi.[runtime_stats_interval_id]
+                WHERE
+                    q.[object_id] = @ProcObjectId
+                    AND rsi.[start_time] < @ProcEndUtc
+                    AND rsi.[end_time] > @ProcStartUtc;
+            END TRY
+            BEGIN CATCH
+                SET @CpuDelta = NULL;
+                SET @LogicalReadsDelta = NULL;
+                SET @PhysicalReadsDelta = NULL;
+                SET @WritesDelta = NULL;
+            END CATCH;
+        END;
 
         IF @RowsScanned = 0
         BEGIN

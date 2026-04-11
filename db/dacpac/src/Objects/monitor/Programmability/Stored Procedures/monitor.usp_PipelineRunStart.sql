@@ -28,9 +28,6 @@ BEGIN
     DECLARE @NormalizedSourceFileName NVARCHAR(260) = NULLIF(TRIM(@SourceFileName), '');
 
     IF @NormalizedPipelineRunId IS NULL
-    BEGIN
-        THROW 51010, 'PipelineRunId is required.', 1;
-    END;
 
     IF @NormalizedPipelineName IS NULL
     BEGIN
@@ -60,9 +57,6 @@ BEGIN
             p.[DurationMs] = NULL,
             p.[DurationMinutes] = NULL,
             p.[Status] = 'Started',
-            p.[RowsRead] = NULL,
-            p.[RowsWritten] = NULL,
-            p.[RowsCopied] = NULL,
             p.[ErrorCode] = NULL,
             p.[ErrorMessage] = NULL,
             p.[UpdatedUtc] = @NowUtc

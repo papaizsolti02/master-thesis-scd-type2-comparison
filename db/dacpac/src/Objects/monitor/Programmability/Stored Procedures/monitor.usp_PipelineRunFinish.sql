@@ -8,9 +8,6 @@
 CREATE PROCEDURE [monitor].[usp_PipelineRunFinish]
     @PipelineRunId NVARCHAR(128),
     @Status NVARCHAR(20),
-    @RowsRead BIGINT = NULL,
-    @RowsWritten BIGINT = NULL,
-    @RowsCopied BIGINT = NULL,
     @ErrorCode NVARCHAR(100) = NULL,
     @ErrorMessage NVARCHAR(4000) = NULL
 AS
@@ -35,21 +32,6 @@ BEGIN
         THROW 51021, 'Status must be one of: Succeeded, Failed, Cancelled.', 1;
     END;
 
-    IF @RowsRead IS NOT NULL AND @RowsRead < 0
-    BEGIN
-        THROW 51022, 'RowsRead cannot be negative.', 1;
-    END;
-
-    IF @RowsWritten IS NOT NULL AND @RowsWritten < 0
-    BEGIN
-        THROW 51023, 'RowsWritten cannot be negative.', 1;
-    END;
-
-    IF @RowsCopied IS NOT NULL AND @RowsCopied < 0
-    BEGIN
-        THROW 51024, 'RowsCopied cannot be negative.', 1;
-    END;
-
     BEGIN TRY
         UPDATE p
         SET
@@ -57,9 +39,6 @@ BEGIN
             p.[DurationMs] = DATEDIFF_BIG(MILLISECOND, p.[StartUtc], @NowUtc),
             p.[DurationMinutes] = CAST(DATEDIFF_BIG(MILLISECOND, p.[StartUtc], @NowUtc) / 60000.0 AS DECIMAL(18, 4)),
             p.[Status] = @NormalizedStatus,
-            p.[RowsRead] = @RowsRead,
-            p.[RowsWritten] = @RowsWritten,
-            p.[RowsCopied] = @RowsCopied,
             p.[ErrorCode] = @NormalizedErrorCode,
             p.[ErrorMessage] = @NormalizedErrorMessage,
             p.[UpdatedUtc] = @NowUtc

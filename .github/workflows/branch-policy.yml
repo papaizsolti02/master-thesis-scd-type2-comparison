@@ -1,0 +1,29 @@
+name: Branch Policy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-branch-flow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enforce feature->develop->main flow
+        run: |
+          BASE="${{ github.base_ref }}"
+          HEAD="${{ github.head_ref }}"
+
+          echo "PR flow check: ${HEAD} -> ${BASE}"
+
+          if [ "$BASE" = "main" ] && [ "$HEAD" != "develop" ]; then
+            echo "Only develop can be merged into main. Current source: $HEAD"
+            exit 1
+          fi
+
+          if [ "$BASE" = "develop" ] && { [ "$HEAD" = "develop" ] || [ "$HEAD" = "main" ]; }; then
+            echo "Only feature branches can be merged into develop. Current source: $HEAD"
+            exit 1
+          fi
+
+          echo "Branch policy validation passed."

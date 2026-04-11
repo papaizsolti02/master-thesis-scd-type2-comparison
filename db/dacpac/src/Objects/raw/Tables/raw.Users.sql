@@ -22,8 +22,8 @@ CREATE TABLE [raw].[Users]
     [SubscriptionTier] NVARCHAR(40) NULL,
     [BillingCycle] NVARCHAR(40) NULL,
     [PaymentMethod] NVARCHAR(40) NULL,
-    [AutoRenew] BIT NULL,
-    [MarketingConsent] BIT NULL,
+    [AutoRenew] CHAR(1) NULL,
+    [MarketingConsent] CHAR(1) NULL,
     [PreferredLanguage] NVARCHAR(10) NULL,
     [ContentLanguage] NVARCHAR(10) NULL,
     [PlanAddons] NVARCHAR(100) NULL

@@ -1,0 +1,12 @@
+{
+	"name": "ls_blob_users",
+	"properties": {
+		"description": "Linked Service for ADLS Gen2 (Blob Storage) for Users",
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "https://datalakemasterthesis.blob.core.windows.net/",
+			"accountKind": "StorageV2"
+		}
+	}
+}

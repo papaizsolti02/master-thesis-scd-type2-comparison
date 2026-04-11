@@ -1,0 +1,11 @@
+{
+	"name": "ls_adls_users",
+	"properties": {
+		"description": "Linked Service to ADLS Gen2 to read users",
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://datalakemasterthesis.dfs.core.windows.net/"
+		}
+	}
+}

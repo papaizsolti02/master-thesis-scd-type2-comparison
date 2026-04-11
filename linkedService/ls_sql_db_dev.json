@@ -1,0 +1,24 @@
+{
+	"name": "ls_sql_db_dev",
+	"properties": {
+		"description": "Linked Service to Dev database",
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "master-thesis-db-server.database.windows.net",
+			"database": "master-thesis-dev-db",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SQL",
+			"userName": "thesis_admin",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_keyvault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "database-server-password"
+			}
+		}
+	}
+}

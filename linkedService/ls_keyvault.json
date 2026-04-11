@@ -1,0 +1,11 @@
+{
+	"name": "ls_keyvault",
+	"properties": {
+		"description": "Linked Service to Azure Key Vault",
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://master-thesis-key-vault.vault.azure.net/"
+		}
+	}
+}

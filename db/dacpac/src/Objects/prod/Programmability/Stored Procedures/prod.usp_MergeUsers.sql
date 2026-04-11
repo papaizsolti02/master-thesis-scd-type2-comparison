@@ -302,11 +302,11 @@ BEGIN
                 FROM
                     [sys].[query_store_query] AS q
                 INNER JOIN [sys].[query_store_plan] AS p
-                    ON p.[query_id] = q.[query_id]
+                    ON q.[query_id] = p.[query_id]
                 INNER JOIN [sys].[query_store_runtime_stats] AS rs
-                    ON rs.[plan_id] = p.[plan_id]
+                    ON p.[plan_id] = rs.[plan_id]
                 INNER JOIN [sys].[query_store_runtime_stats_interval] AS rsi
-                    ON rsi.[runtime_stats_interval_id] = rs.[runtime_stats_interval_id]
+                    ON rs.[runtime_stats_interval_id] = rsi.[runtime_stats_interval_id]
                 WHERE
                     q.[object_id] = @ProcObjectId
                     AND rsi.[start_time] < @ProcEndUtc

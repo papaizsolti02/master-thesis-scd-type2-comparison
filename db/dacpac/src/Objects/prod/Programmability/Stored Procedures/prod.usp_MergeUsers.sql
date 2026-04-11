@@ -7,15 +7,41 @@
 -- -----------------------------------------------------------------------------
 
 CREATE PROCEDURE [prod].[usp_MergeUsers] -- noqa: 
+    @PipelineRunId NVARCHAR(128) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
+    DECLARE @NormalizedPipelineRunId NVARCHAR(128) = NULLIF(TRIM(@PipelineRunId), '');
     DECLARE @AsOfDate DATETIME = CURRENT_TIMESTAMP;
     DECLARE @MatchedCount INT = 0;
     DECLARE @ExpiredCount INT = 0;
     DECLARE @InsertedCount INT = 0;
+
+    DECLARE @RowsRead BIGINT = 0;
+    DECLARE @RowsScanned BIGINT = 0;
+    DECLARE @RowsWritten BIGINT = 0;
+    DECLARE @RowsInserted BIGINT = 0;
+    DECLARE @RowsUpdated BIGINT = 0;
+    DECLARE @RowsExpired BIGINT = 0;
+
+    DECLARE @CpuStart BIGINT = NULL;
+    DECLARE @CpuEnd BIGINT = NULL;
+    DECLARE @LogicalReadsStart BIGINT = NULL;
+    DECLARE @LogicalReadsEnd BIGINT = NULL;
+    DECLARE @PhysicalReadsStart BIGINT = NULL;
+    DECLARE @PhysicalReadsEnd BIGINT = NULL;
+    DECLARE @WritesStart BIGINT = NULL;
+    DECLARE @WritesEnd BIGINT = NULL;
+
+    DECLARE @CpuDelta BIGINT = NULL;
+    DECLARE @LogicalReadsDelta BIGINT = NULL;
+    DECLARE @PhysicalReadsDelta BIGINT = NULL;
+    DECLARE @WritesDelta BIGINT = NULL;
+
+    DECLARE @ErrorNumber INT = NULL;
+    DECLARE @ErrorMessage NVARCHAR(4000) = NULL;
 
     IF OBJECT_ID(N'[stage].[Users]', N'U') IS NULL
     BEGIN
@@ -27,8 +53,29 @@ BEGIN
         THROW 50102, 'Required table [prod].[Users] does not exist.', 1;
     END;
 
+    SELECT
+        @CpuStart = s.[cpu_time],
+        @LogicalReadsStart = s.[logical_reads],
+        @PhysicalReadsStart = s.[reads],
+        @WritesStart = s.[writes]
+    FROM
+        [sys].[dm_exec_sessions] AS s
+    WHERE
+        s.[session_id] = @@SPID;
+
+    IF @NormalizedPipelineRunId IS NOT NULL
+    BEGIN
+        EXEC [monitor].[usp_ProcedureRunStart]
+            @PipelineRunId = @NormalizedPipelineRunId,
+            @ProcedureName = N'prod.usp_MergeUsers',
+            @ProcedurePhase = N'Merge';
+    END;
+
     BEGIN TRY
         BEGIN TRAN;
+
+        SELECT @RowsRead = COUNT_BIG(1)
+        FROM [stage].[Users];
 
         -- 1) Update current rows where hash is present in stage (update non hash fields)
         UPDATE p
@@ -170,13 +217,51 @@ BEGIN
 
         SET @InsertedCount = @@ROWCOUNT;
 
+        SET @RowsInserted = @InsertedCount;
+        SET @RowsWritten = @InsertedCount;
+        SET @RowsExpired = @ExpiredCount;
+
         UPDATE p
         SET
             p.[LastRefreshedDate] = @AsOfDate
         FROM
             [prod].[Users] AS p;
 
+        SET @RowsUpdated = CAST(@MatchedCount AS BIGINT);
+        SET @RowsScanned = @RowsRead;
+
         COMMIT TRAN;
+
+        SELECT
+            @CpuEnd = s.[cpu_time],
+            @LogicalReadsEnd = s.[logical_reads],
+            @PhysicalReadsEnd = s.[reads],
+            @WritesEnd = s.[writes]
+        FROM [sys].[dm_exec_sessions] AS s
+        WHERE s.[session_id] = @@SPID;
+
+        SET @CpuDelta = CASE WHEN @CpuStart IS NULL OR @CpuEnd IS NULL THEN NULL ELSE @CpuEnd - @CpuStart END;
+        SET @LogicalReadsDelta = CASE WHEN @LogicalReadsStart IS NULL OR @LogicalReadsEnd IS NULL THEN NULL ELSE @LogicalReadsEnd - @LogicalReadsStart END;
+        SET @PhysicalReadsDelta = CASE WHEN @PhysicalReadsStart IS NULL OR @PhysicalReadsEnd IS NULL THEN NULL ELSE @PhysicalReadsEnd - @PhysicalReadsStart END;
+        SET @WritesDelta = CASE WHEN @WritesStart IS NULL OR @WritesEnd IS NULL THEN NULL ELSE @WritesEnd - @WritesStart END;
+
+        IF @NormalizedPipelineRunId IS NOT NULL
+        BEGIN
+            EXEC [monitor].[usp_ProcedureRunFinish]
+                @PipelineRunId = @NormalizedPipelineRunId,
+                @ProcedureName = N'prod.usp_MergeUsers',
+                @Status = N'Succeeded',
+                @RowsRead = @RowsRead,
+                @RowsScanned = @RowsScanned,
+                @RowsWritten = @RowsWritten,
+                @RowsInserted = @RowsInserted,
+                @RowsUpdated = @RowsUpdated,
+                @RowsExpired = @RowsExpired,
+                @CpuTimeMs = @CpuDelta,
+                @LogicalReads = @LogicalReadsDelta,
+                @PhysicalReads = @PhysicalReadsDelta,
+                @Writes = @WritesDelta;
+        END;
 
         SELECT
             @AsOfDate AS [MergeTimestamp],
@@ -185,9 +270,55 @@ BEGIN
             @InsertedCount AS [InsertedRows];
     END TRY
     BEGIN CATCH
+        SET @ErrorNumber = ERROR_NUMBER();
+        SET @ErrorMessage = ERROR_MESSAGE();
+
         IF @@TRANCOUNT > 0
         BEGIN
             ROLLBACK TRAN;
+        END;
+
+        SELECT
+            @CpuEnd = s.[cpu_time],
+            @LogicalReadsEnd = s.[logical_reads],
+            @PhysicalReadsEnd = s.[reads],
+            @WritesEnd = s.[writes]
+        FROM [sys].[dm_exec_sessions] AS s
+        WHERE s.[session_id] = @@SPID;
+
+        SET @CpuDelta = CASE WHEN @CpuStart IS NULL OR @CpuEnd IS NULL THEN NULL ELSE @CpuEnd - @CpuStart END;
+        SET @LogicalReadsDelta = CASE WHEN @LogicalReadsStart IS NULL OR @LogicalReadsEnd IS NULL THEN NULL ELSE @LogicalReadsEnd - @LogicalReadsStart END;
+        SET @PhysicalReadsDelta = CASE WHEN @PhysicalReadsStart IS NULL OR @PhysicalReadsEnd IS NULL THEN NULL ELSE @PhysicalReadsEnd - @PhysicalReadsStart END;
+        SET @WritesDelta = CASE WHEN @WritesStart IS NULL OR @WritesEnd IS NULL THEN NULL ELSE @WritesEnd - @WritesStart END;
+
+        IF @RowsScanned = 0
+        BEGIN
+            SET @RowsScanned = @RowsRead;
+        END;
+
+        IF @NormalizedPipelineRunId IS NOT NULL
+        BEGIN
+            BEGIN TRY
+                EXEC [monitor].[usp_ProcedureRunFinish]
+                    @PipelineRunId = @NormalizedPipelineRunId,
+                    @ProcedureName = N'prod.usp_MergeUsers',
+                    @Status = N'Failed',
+                    @RowsRead = @RowsRead,
+                    @RowsScanned = @RowsScanned,
+                    @RowsWritten = @RowsWritten,
+                    @RowsInserted = @RowsInserted,
+                    @RowsUpdated = @RowsUpdated,
+                    @RowsExpired = @RowsExpired,
+                    @CpuTimeMs = @CpuDelta,
+                    @LogicalReads = @LogicalReadsDelta,
+                    @PhysicalReads = @PhysicalReadsDelta,
+                    @Writes = @WritesDelta,
+                    @ErrorNumber = @ErrorNumber,
+                    @ErrorMessage = @ErrorMessage;
+            END TRY
+            BEGIN CATCH
+                -- Preserve original ETL failure if monitoring logging fails.
+            END CATCH;
         END;
 
         THROW;

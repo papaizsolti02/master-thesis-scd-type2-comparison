@@ -14,7 +14,7 @@
 			"password": {
 				"type": "AzureKeyVaultSecret",
 				"store": {
-					"referenceName": "kv_server_password",
+					"referenceName": "ls_keyvault",
 					"type": "LinkedServiceReference"
 				},
 				"secretName": "database-server-password"

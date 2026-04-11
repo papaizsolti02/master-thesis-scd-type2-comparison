@@ -1,6 +1,16 @@
 import numpy as np
 
 
+def _sample_different(current_values, candidate_values):
+    """Sample replacement values that differ from current row values."""
+    result = np.array(current_values, copy=True)
+    for i, current in enumerate(current_values):
+        alternatives = [v for v in candidate_values if v != current]
+        if alternatives:
+            result[i] = np.random.choice(alternatives)
+    return result
+
+
 def clustered_modify(df, r, c):
     N = len(df)
     total_modify = int(r * N)
@@ -54,6 +64,7 @@ def clustered_modify(df, r, c):
     for attr, (values, _) in attr_values.items():
         mask = modify_indices[attrs == attr]
         if len(mask) > 0:
-            df.loc[mask, attr] = np.random.choice(values, size=len(mask))
+            current = df.loc[mask, attr].to_numpy()
+            df.loc[mask, attr] = _sample_different(current, values)
 
     return df, len(modify_indices)

@@ -1,0 +1,1796 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "master-thesis-adf"
+		},
+		"ls_adls_users_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://datalakemasterthesis.dfs.core.windows.net/"
+		},
+		"ls_blob_users_properties_typeProperties_serviceEndpoint": {
+			"type": "string",
+			"defaultValue": "https://datalakemasterthesis.blob.core.windows.net/"
+		},
+		"ls_keyvault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://master-thesis-key-vault.vault.azure.net/"
+		},
+		"ls_sql_db_dev_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "master-thesis-db-server.database.windows.net"
+		},
+		"ls_sql_db_dev_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "master-thesis-dev-db"
+		},
+		"ls_sql_db_dev_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "thesis_admin"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_Full_SCD2_ETL')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy Raw Users to Raw Table",
+						"description": "Copy raw CSV users to the raw table: [raw].[Users]",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "TRUNCATE TABLE [raw].[Users]",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "FirstName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "FirstName",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "LastName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "LastName",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Email",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Email",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Username",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Username",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "DateOfBirth",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "DateOfBirth",
+											"type": "Date",
+											"physicalType": "date"
+										}
+									},
+									{
+										"source": {
+											"name": "RegistrationDate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "RegistrationDate",
+											"type": "Date",
+											"physicalType": "date"
+										}
+									},
+									{
+										"source": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "City",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "City",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Gender",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Gender",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "AccountCreatedVia",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "AccountCreatedVia",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ReferralSource",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ReferralSource",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "SubscriptionTier",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "SubscriptionTier",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "BillingCycle",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "BillingCycle",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "PaymentMethod",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PaymentMethod",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "AutoRenew",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "AutoRenew",
+											"type": "String",
+											"physicalType": "char"
+										}
+									},
+									{
+										"source": {
+											"name": "MarketingConsent",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "MarketingConsent",
+											"type": "String",
+											"physicalType": "char"
+										}
+									},
+									{
+										"source": {
+											"name": "PreferredLanguage",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PreferredLanguage",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ContentLanguage",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ContentLanguage",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "PlanAddons",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PlanAddons",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "one_file_users",
+								"type": "DatasetReference",
+								"parameters": {
+									"pfileName": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "raw_users_table",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Execute Staging Stored Procedure",
+						"description": "Execute transformation staging stored procedure [stage].[usp_ProcessUsers]",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Raw Users to Raw Table",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[stage].[usp_ProcessUsers]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().parameters.MasterPipelineRunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Execute Merging Stored Procedure",
+						"description": "Execute merging stored procedure [prod].[usp_MergeUsers]",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Staging Stored Procedure",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[prod].[usp_MergeUsers]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().parameters.MasterPipelineRunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"fileName": {
+						"type": "string"
+					},
+					"SCD2Method": {
+						"type": "string"
+					},
+					"EnvironmentName": {
+						"type": "string"
+					},
+					"MasterPipelineRunId": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "full_scd2_pipelines"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/one_file_users')]",
+				"[concat(variables('factoryId'), '/datasets/raw_users_table')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_sql_db_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_Master_Full_SCD2_ETL')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Failure - Pipeline Monitoring Finish_copy1",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Full SCD2 ETL",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunFinish]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"Status": {
+									"value": "Failed",
+									"type": "String"
+								},
+								"ErrorCode": {
+									"value": {
+										"value": "@activity('Execute Full SCD2 ETL').output.error.errorCode",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ErrorMessage": {
+									"value": {
+										"value": "@activity('Execute Full SCD2 ETL').output.error.errorMessage",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Execute Full SCD2 ETL",
+						"description": "Execute Full SCD2 ETL pipeline",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Pipeline Monitoring Start",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pl_Full_SCD2_ETL",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"fileName": {
+									"value": "@pipeline().parameters.fileName",
+									"type": "Expression"
+								},
+								"SCD2Method": {
+									"value": "@pipeline().parameters.SCD2Method",
+									"type": "Expression"
+								},
+								"EnvironmentName": {
+									"value": "@pipeline().parameters.EnvironmentName",
+									"type": "Expression"
+								},
+								"MasterPipelineRunId": {
+									"value": "@pipeline().RunId",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "Pipeline Monitoring Start",
+						"description": "Execute Starting Pipeline Monitoring Procedure",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Lookup Rvalue and Cvalue from the CSV file",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunStart]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"PipelineName": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"EnvironmentName": {
+									"value": {
+										"value": "@pipeline().parameters.EnvironmentName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"TriggerType": {
+									"value": {
+										"value": "@pipeline().TriggerType",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"TriggerName": {
+									"value": {
+										"value": "@pipeline().TriggerName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"SourceFileName": {
+									"value": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"RValue": {
+									"value": {
+										"value": "@activity('Lookup Rvalue and Cvalue from the CSV file').output.firstRow.RValue",
+										"type": "Expression"
+									},
+									"type": "Decimal"
+								},
+								"CValue": {
+									"value": {
+										"value": "@activity('Lookup Rvalue and Cvalue from the CSV file').output.firstRow.CValue",
+										"type": "Expression"
+									},
+									"type": "Decimal"
+								},
+								"SCD2Method": {
+									"value": {
+										"value": "@pipeline().parameters.SCD2Method",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Lookup Rvalue and Cvalue from the CSV file",
+						"description": "Get Rvalue and Cvalue from the CSV file",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "one_file_users",
+								"type": "DatasetReference",
+								"parameters": {
+									"pfileName": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					},
+					{
+						"name": "Success - Pipeline Monitoring Finish",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Full SCD2 ETL",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunFinish]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"Status": {
+									"value": "Succeeded",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"fileName": {
+						"type": "string",
+						"defaultValue": "users_day000.csv"
+					},
+					"SCD2Method": {
+						"type": "string",
+						"defaultValue": "FullSCD2"
+					},
+					"EnvironmentName": {
+						"type": "string",
+						"defaultValue": "Development"
+					}
+				},
+				"folder": {
+					"name": "full_scd2_pipelines"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_sql_db_dev')]",
+				"[concat(variables('factoryId'), '/pipelines/pl_Full_SCD2_ETL')]",
+				"[concat(variables('factoryId'), '/datasets/one_file_users')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pl_Test_ETL_1_File_Dev_DB')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy Raw Users to Raw Table",
+						"description": "Copy raw CSV users to the raw table: [raw].[Users]",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Pipeline Monitoring Start",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "TRUNCATE TABLE [raw].[Users]",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "FirstName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "FirstName",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "LastName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "LastName",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Email",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Email",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Username",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Username",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "DateOfBirth",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "DateOfBirth",
+											"type": "Date",
+											"physicalType": "date"
+										}
+									},
+									{
+										"source": {
+											"name": "RegistrationDate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "RegistrationDate",
+											"type": "Date",
+											"physicalType": "date"
+										}
+									},
+									{
+										"source": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "City",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "City",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Gender",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Gender",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "AccountCreatedVia",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "AccountCreatedVia",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ReferralSource",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ReferralSource",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "SubscriptionTier",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "SubscriptionTier",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "BillingCycle",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "BillingCycle",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "PaymentMethod",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PaymentMethod",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "AutoRenew",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "AutoRenew",
+											"type": "String",
+											"physicalType": "char"
+										}
+									},
+									{
+										"source": {
+											"name": "MarketingConsent",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "MarketingConsent",
+											"type": "String",
+											"physicalType": "char"
+										}
+									},
+									{
+										"source": {
+											"name": "PreferredLanguage",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PreferredLanguage",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ContentLanguage",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ContentLanguage",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "PlanAddons",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "PlanAddons",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "one_file_users",
+								"type": "DatasetReference",
+								"parameters": {
+									"pfileName": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "raw_users_table",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Execute Staging Stored Procedure",
+						"description": "Execute transformation staging stored procedure [stage].[usp_ProcessUsers]",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Raw Users to Raw Table",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[stage].[usp_ProcessUsers]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Execute Merging Stored Procedure",
+						"description": "Execute merging stored procedure [prod].[usp_MergeUsers]",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Staging Stored Procedure",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[prod].[usp_MergeUsers]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Lookup Rvalue and Cvalue from the CSV file",
+						"description": "Get Rvalue and Cvalue from the CSV file",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "one_file_users",
+								"type": "DatasetReference",
+								"parameters": {
+									"pfileName": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					},
+					{
+						"name": "Pipeline Monitoring Start",
+						"description": "Execute Starting Pipeline Monitoring Procedure",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Lookup Rvalue and Cvalue from the CSV file",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunStart]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"PipelineName": {
+									"value": {
+										"value": "@pipeline().Pipeline",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"EnvironmentName": {
+									"value": {
+										"value": "@pipeline().parameters.EnvironmentName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"TriggerType": {
+									"value": {
+										"value": "@pipeline().TriggerType",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"TriggerName": {
+									"value": {
+										"value": "@pipeline().TriggerName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"SourceFileName": {
+									"value": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"RValue": {
+									"value": {
+										"value": "@activity('Lookup Rvalue and Cvalue from the CSV file').output.firstRow.RValue",
+										"type": "Expression"
+									},
+									"type": "Decimal"
+								},
+								"CValue": {
+									"value": {
+										"value": "@activity('Lookup Rvalue and Cvalue from the CSV file').output.firstRow.CValue",
+										"type": "Expression"
+									},
+									"type": "Decimal"
+								},
+								"SCD2Method": {
+									"value": {
+										"value": "@pipeline().parameters.SCD2Method",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Success - Pipeline Monitoring Finish",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Merging Stored Procedure",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunFinish]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"Status": {
+									"value": "Succeeded",
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Failure - Pipeline Monitoring Finish",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Merging Stored Procedure",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunFinish]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"Status": {
+									"value": "Failed",
+									"type": "String"
+								},
+								"ErrorCode": {
+									"value": {
+										"value": "@activity('Execute Merging Stored Procedure').output.error.errorCode",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ErrorMessage": {
+									"value": {
+										"value": "@activity('Execute Merging Stored Procedure').output.error.errorMessage",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Failure - Pipeline Monitoring Finish_copy1",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Raw Users to Raw Table",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunFinish]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"Status": {
+									"value": "Failed",
+									"type": "String"
+								},
+								"ErrorCode": {
+									"value": {
+										"value": "@activity('Copy Raw Users to Raw Table').output.error.errorCode",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ErrorMessage": {
+									"value": {
+										"value": "@activity('Copy Raw Users to Raw Table').output.error.errorMessage",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "Failure - Pipeline Monitoring Finish_copy2",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Execute Staging Stored Procedure",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[monitor].[usp_PipelineRunFinish]",
+							"storedProcedureParameters": {
+								"PipelineRunId": {
+									"value": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"Status": {
+									"value": "Failed",
+									"type": "String"
+								},
+								"ErrorCode": {
+									"value": {
+										"value": "@activity('Execute Staging Stored Procedure').output.error.errorCode",
+										"type": "Expression"
+									},
+									"type": "String"
+								},
+								"ErrorMessage": {
+									"value": {
+										"value": "@activity('Execute Staging Stored Procedure').output.error.errorMessage",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "ls_sql_db_dev",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"fileName": {
+						"type": "string",
+						"defaultValue": "users_day000.csv"
+					},
+					"SCD2Method": {
+						"type": "string",
+						"defaultValue": "FullSCD2"
+					},
+					"EnvironmentName": {
+						"type": "string",
+						"defaultValue": "Dev"
+					}
+				},
+				"folder": {
+					"name": "test_pipelines"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/one_file_users')]",
+				"[concat(variables('factoryId'), '/datasets/raw_users_table')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_sql_db_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/one_file_users')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_blob_users",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"pfileName": {
+						"type": "string",
+						"defaultValue": "users_day000.csv"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().pfileName",
+							"type": "Expression"
+						},
+						"folderPath": "data",
+						"container": "master-thesis"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "UserID",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Email",
+						"type": "String"
+					},
+					{
+						"name": "Username",
+						"type": "String"
+					},
+					{
+						"name": "DateOfBirth",
+						"type": "String"
+					},
+					{
+						"name": "RegistrationDate",
+						"type": "String"
+					},
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "Gender",
+						"type": "String"
+					},
+					{
+						"name": "AccountCreatedVia",
+						"type": "String"
+					},
+					{
+						"name": "ReferralSource",
+						"type": "String"
+					},
+					{
+						"name": "SubscriptionTier",
+						"type": "String"
+					},
+					{
+						"name": "BillingCycle",
+						"type": "String"
+					},
+					{
+						"name": "PaymentMethod",
+						"type": "String"
+					},
+					{
+						"name": "AutoRenew",
+						"type": "String"
+					},
+					{
+						"name": "MarketingConsent",
+						"type": "String"
+					},
+					{
+						"name": "PreferredLanguage",
+						"type": "String"
+					},
+					{
+						"name": "ContentLanguage",
+						"type": "String"
+					},
+					{
+						"name": "PlanAddons",
+						"type": "String"
+					},
+					{
+						"name": "TenureDays",
+						"type": "String"
+					},
+					{
+						"name": "SnapshotDate",
+						"type": "String"
+					},
+					{
+						"name": "DayNumber",
+						"type": "String"
+					},
+					{
+						"name": "r",
+						"type": "String"
+					},
+					{
+						"name": "c",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_blob_users')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/raw_users_table')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_sql_db_dev",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Id",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "FirstName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "LastName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Email",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Username",
+						"type": "nvarchar"
+					},
+					{
+						"name": "DateOfBirth",
+						"type": "date"
+					},
+					{
+						"name": "RegistrationDate",
+						"type": "date"
+					},
+					{
+						"name": "Country",
+						"type": "nvarchar"
+					},
+					{
+						"name": "City",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Gender",
+						"type": "nvarchar"
+					},
+					{
+						"name": "AccountCreatedVia",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ReferralSource",
+						"type": "nvarchar"
+					},
+					{
+						"name": "SubscriptionTier",
+						"type": "nvarchar"
+					},
+					{
+						"name": "BillingCycle",
+						"type": "nvarchar"
+					},
+					{
+						"name": "PaymentMethod",
+						"type": "nvarchar"
+					},
+					{
+						"name": "AutoRenew",
+						"type": "bit"
+					},
+					{
+						"name": "MarketingConsent",
+						"type": "bit"
+					},
+					{
+						"name": "PreferredLanguage",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ContentLanguage",
+						"type": "nvarchar"
+					},
+					{
+						"name": "PlanAddons",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "raw",
+					"table": "Users"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_sql_db_dev')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adls_users')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Linked Service to ADLS Gen2 to read users",
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_users_properties_typeProperties_url')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_blob_users')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Linked Service for ADLS Gen2 (Blob Storage) for Users",
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"serviceEndpoint": "[parameters('ls_blob_users_properties_typeProperties_serviceEndpoint')]",
+					"accountKind": "StorageV2"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_keyvault')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Linked Service to Azure Key Vault",
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_keyvault_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_sql_db_dev')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Linked Service to Dev database",
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('ls_sql_db_dev_properties_typeProperties_server')]",
+					"database": "[parameters('ls_sql_db_dev_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('ls_sql_db_dev_properties_typeProperties_userName')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvault",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "database-server-password"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_keyvault')]"
+			]
+		}
+	]
+}

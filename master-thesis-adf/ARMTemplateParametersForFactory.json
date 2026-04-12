@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "master-thesis-adf"
+		},
+		"ls_adls_users_properties_typeProperties_url": {
+			"value": "https://datalakemasterthesis.dfs.core.windows.net/"
+		},
+		"ls_blob_users_properties_typeProperties_serviceEndpoint": {
+			"value": "https://datalakemasterthesis.blob.core.windows.net/"
+		},
+		"ls_keyvault_properties_typeProperties_baseUrl": {
+			"value": "https://master-thesis-key-vault.vault.azure.net/"
+		},
+		"ls_sql_db_dev_properties_typeProperties_server": {
+			"value": "master-thesis-db-server.database.windows.net"
+		},
+		"ls_sql_db_dev_properties_typeProperties_database": {
+			"value": "master-thesis-dev-db"
+		},
+		"ls_sql_db_dev_properties_typeProperties_userName": {
+			"value": "thesis_admin"
+		}
+	}
+}

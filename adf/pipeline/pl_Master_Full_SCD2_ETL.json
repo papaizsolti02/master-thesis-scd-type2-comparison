@@ -284,7 +284,7 @@
 			}
 		},
 		"folder": {
-			"name": "full_scd2_pipelines/Development/Full_SCD2"
+			"name": "full_scd2_pipelines"
 		},
 		"annotations": []
 	}

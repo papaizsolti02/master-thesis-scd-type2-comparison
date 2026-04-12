@@ -1,9 +1,0 @@
-{
-	"name": "pl_TestPipeline",
-	"properties": {
-		"folder": {
-			"name": "test_pipelines"
-		},
-		"annotations": []
-	}
-}

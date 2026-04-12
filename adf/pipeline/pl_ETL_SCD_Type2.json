@@ -1,9 +1,0 @@
-{
-	"name": "pl_ETL_SCD_Type2",
-	"properties": {
-		"folder": {
-			"name": "full_scd2_pipelines"
-		},
-		"annotations": []
-	}
-}

@@ -82,7 +82,8 @@ jobs:
             --name "$ADF_PIPELINE_NAME" \
             --parameters "$PARAMS" \
             --query runId \
-            --output tsv)
+            --output tsv \
+            --debug)
 
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "Started ADF runId: $RUN_ID"

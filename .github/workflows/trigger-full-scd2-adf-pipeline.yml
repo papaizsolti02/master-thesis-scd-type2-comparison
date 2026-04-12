@@ -7,10 +7,6 @@ on:
         description: "Input file name parameter for ADF pipeline"
         required: true
         type: string
-      SCD2Method:
-        description: "SCD2 method parameter for ADF pipeline"
-        required: true
-        type: string
       EnvironmentName:
         description: "EnvironmentName parameter for ADF pipeline"
         required: true

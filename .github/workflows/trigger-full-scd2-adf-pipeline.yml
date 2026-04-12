@@ -70,6 +70,11 @@ jobs:
           set -euo pipefail
 
           PARAMS="{\"fileName\":\"${{ inputs.fileName }}\",\"SCD2Method\":\"FullSCD2\",\"EnvironmentName\":\"${{ inputs.EnvironmentName }}\"}"
+          
+          echo "DEBUG: Resource Group = $ADF_RESOURCE_GROUP"
+          echo "DEBUG: Factory Name = $ADF_FACTORY_NAME"
+          echo "DEBUG: Pipeline Name = $ADF_PIPELINE_NAME"
+          echo "DEBUG: Parameters = $PARAMS"
 
           RUN_ID=$(az datafactory pipeline create-run \
             --resource-group "$ADF_RESOURCE_GROUP" \

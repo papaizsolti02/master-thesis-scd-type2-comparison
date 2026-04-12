@@ -1,0 +1,123 @@
+name: Trigger Full SCD2 ADF Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      fileName:
+        description: "Input file name parameter for ADF pipeline"
+        required: true
+        type: string
+      SCD2Method:
+        description: "SCD2 method parameter for ADF pipeline"
+        required: true
+        type: string
+      EnvironmentName:
+        description: "EnvironmentName parameter for ADF pipeline"
+        required: true
+        type: choice
+        options:
+          - Development
+          - Testing
+          - QA
+          - Production
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  run-adf-pipeline:
+    name: Run ADF Pipeline
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.EnvironmentName == 'Development' && 'dev' || inputs.EnvironmentName == 'Testing' && 'test' || inputs.EnvironmentName == 'QA' && 'qa' || inputs.EnvironmentName == 'Production' && 'prod' }}
+
+    env:
+      ADF_RESOURCE_GROUP: ${{ vars.ADF_RESOURCE_GROUP }}
+      ADF_FACTORY_NAME: ${{ vars.ADF_FACTORY_NAME }}
+      ADF_PIPELINE_NAME: ${{ vars.ADF_PIPELINE_NAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate ADF configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${ADF_RESOURCE_GROUP}" ]; then
+            echo "ADF_RESOURCE_GROUP is not set. Configure it as an Environment Variable in GitHub."
+            exit 1
+          fi
+
+          if [ -z "${ADF_FACTORY_NAME}" ]; then
+            echo "ADF_FACTORY_NAME is not set. Configure it as an Environment Variable in GitHub."
+            exit 1
+          fi
+
+          if [ -z "${ADF_PIPELINE_NAME}" ]; then
+            echo "ADF_PIPELINE_NAME is not set. Configure it as an Environment Variable in GitHub."
+            exit 1
+          fi
+
+      - name: Trigger ADF pipeline
+        id: trigger
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RUN_ID=$(az datafactory pipeline create-run \
+            --resource-group "$ADF_RESOURCE_GROUP" \
+            --factory-name "$ADF_FACTORY_NAME" \
+            --name "$ADF_PIPELINE_NAME" \
+            --parameters \
+              fileName='${{ inputs.fileName }}' \
+              SCD2Method='FullSCD2' \
+              EnvironmentName='${{ inputs.EnvironmentName }}' \
+            --query runId \
+            --output tsv)
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Started ADF runId: $RUN_ID"
+
+      - name: Wait for ADF run completion
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RUN_ID='${{ steps.trigger.outputs.run_id }}'
+          MAX_ATTEMPTS=120
+          SLEEP_SECONDS=15
+
+          for ((i=1; i<=MAX_ATTEMPTS; i++)); do
+            STATUS=$(az datafactory pipeline-run show \
+              --resource-group "$ADF_RESOURCE_GROUP" \
+              --factory-name "$ADF_FACTORY_NAME" \
+              --run-id "$RUN_ID" \
+              --query status \
+              --output tsv)
+
+            echo "Attempt $i/$MAX_ATTEMPTS - Status: $STATUS"
+
+            if [ "$STATUS" = "Succeeded" ]; then
+              echo "ADF pipeline run succeeded."
+              exit 0
+            fi
+
+            if [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then
+              echo "ADF pipeline run ended with status: $STATUS"
+              exit 1
+            fi
+
+            sleep "$SLEEP_SECONDS"
+          done
+
+          echo "Timed out waiting for ADF pipeline run to complete."
+          exit 1

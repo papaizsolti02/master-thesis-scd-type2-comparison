@@ -91,48 +91,7 @@ BEGIN
             N'@OutRows BIGINT OUTPUT',
             @OutRows = @RowsRead OUTPUT;
 
-        -- 1) Update current rows where hash is present in stage (update non hash fields)
-        SET @Sql = N'
-            UPDATE p
-            SET
-                p.[FullName] = s.[FullName],
-                p.[FirstName] = s.[FirstName],
-                p.[LastName] = s.[LastName],
-                p.[DateOfBirth] = s.[DateOfBirth],
-                p.[YearOfBirth] = s.[YearOfBirth],
-                p.[MonthOfBirth] = s.[MonthOfBirth],
-                p.[DayOfBirth] = s.[DayOfBirth],
-                p.[RegistrationDate] = s.[RegistrationDate],
-                p.[Country] = s.[Country],
-                p.[CountryCode] = s.[CountryCode],
-                p.[City] = s.[City],
-                p.[Gender] = s.[Gender],
-                p.[AccountCreatedVia] = s.[AccountCreatedVia],
-                p.[ReferralSource] = s.[ReferralSource],
-                p.[SubscriptionTier] = s.[SubscriptionTier],
-                p.[SubscriptionTierRank] = s.[SubscriptionTierRank],
-                p.[IsPaidTier] = s.[IsPaidTier],
-                p.[BillingCycle] = s.[BillingCycle],
-                p.[PaymentMethod] = s.[PaymentMethod],
-                p.[PaymentMethodGroup] = s.[PaymentMethodGroup],
-                p.[IsCardBased] = s.[IsCardBased],
-                p.[AutoRenew] = s.[AutoRenew],
-                p.[MarketingConsent] = s.[MarketingConsent],
-                p.[PreferredLanguage] = s.[PreferredLanguage],
-                p.[ContentLanguage] = s.[ContentLanguage],
-                p.[PlanAddons] = s.[PlanAddons]
-            FROM ' + @ProdUsersTable + N' AS p
-            INNER JOIN ' + @StageUsersTable + N' AS s
-                ON ISNULL(p.[Rowhash], 0x0) = ISNULL(s.[Rowhash], 0x0)
-            WHERE p.[IsActive] = 1;
-            SET @OutRows = @@ROWCOUNT;';
-
-        EXEC sys.sp_executesql
-            @Sql,
-            N'@OutRows INT OUTPUT',
-            @OutRows = @MatchedCount OUTPUT;
-
-        -- 2) Expire active rows whose hash is no longer present in stage
+        -- 1) Expire active rows whose hash is no longer present in stage
         SET @Sql = N'
             UPDATE p
             SET
@@ -155,7 +114,7 @@ BEGIN
             @AsOfDate = @AsOfDate,
             @OutRows = @ExpiredCount OUTPUT;
 
-        -- 3) Insert rows whose hash cannot be found in current active prod
+        -- 2) Insert rows whose hash cannot be found in current active prod
         SET @Sql = N'
             INSERT INTO ' + @ProdUsersTable + N'
             (

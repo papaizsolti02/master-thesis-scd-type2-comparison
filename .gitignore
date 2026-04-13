@@ -3,7 +3,8 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.tex
-
+scd2_notes.md
+NORM_IOCOST_NOTE.md
 snapshots/
 
 .sqlfluff_cache/

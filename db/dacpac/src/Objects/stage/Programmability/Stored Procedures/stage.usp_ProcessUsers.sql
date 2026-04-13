@@ -6,14 +6,21 @@
 -- Version: 1.0
 -- -----------------------------------------------------------------------------
 
-CREATE PROCEDURE [stage].[usp_ProcessUsers] -- noqa: 
-    @PipelineRunId NVARCHAR(128) = NULL
+CREATE PROCEDURE [stage].[usp_ProcessUsers] -- noqa:
+    @PipelineRunId NVARCHAR(128) = NULL,
+    @SCD2Method NVARCHAR(50) = N'FullSCD2'
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
     DECLARE @NormalizedPipelineRunId NVARCHAR(128) = NULLIF(TRIM(@PipelineRunId), '');
+    DECLARE @NormalizedMethod NVARCHAR(50) = UPPER(ISNULL(NULLIF(TRIM(@SCD2Method), ''), 'FULLSCD2'));
+    DECLARE @TargetSchema SYSNAME = NULL;
+    DECLARE @RawUsersTable NVARCHAR(300) = NULL;
+    DECLARE @StageUsersTable NVARCHAR(300) = NULL;
+    DECLARE @Sql NVARCHAR(MAX) = NULL;
+    DECLARE @RowsTouched BIGINT = 0;
     DECLARE @RowsRead BIGINT = 0;
     DECLARE @RowsScanned BIGINT = 0;
     DECLARE @RowsWritten BIGINT = 0;
@@ -33,14 +40,34 @@ BEGIN
     DECLARE @ErrorNumber INT = NULL;
     DECLARE @ErrorMessage NVARCHAR(4000) = NULL;
 
-    IF OBJECT_ID(N'[stage].[Users]', N'U') IS NULL
+    IF @NormalizedMethod IN (N'FULLSCD2', N'FULL')
     BEGIN
-        THROW 50001, 'Required table [stage].[Users] does not exist.', 1;
+        SET @TargetSchema = N'full_scd2';
+    END
+    ELSE IF @NormalizedMethod IN (N'SNAPSHOTSCD2', N'SNAPSHOT')
+    BEGIN
+        SET @TargetSchema = N'snapshot_scd2';
+    END
+    ELSE IF @NormalizedMethod IN (N'MERKLESCD2', N'MERKLE')
+    BEGIN
+        SET @TargetSchema = N'merkle_scd2';
+    END
+    ELSE
+    BEGIN
+        THROW 50006, 'Unsupported SCD2Method. Allowed: FullSCD2, SnapshotSCD2, MerkleSCD2.', 1;
     END;
 
-    IF OBJECT_ID(N'[raw].[Users]', N'U') IS NULL
+    SET @RawUsersTable = QUOTENAME(@TargetSchema) + N'.[raw_Users]';
+    SET @StageUsersTable = QUOTENAME(@TargetSchema) + N'.[stage_Users]';
+
+    IF OBJECT_ID(@StageUsersTable, N'U') IS NULL
     BEGIN
-        THROW 50002, 'Required table [raw].[Users] does not exist.', 1;
+        THROW 50001, 'Required stage table for selected method does not exist.', 1;
+    END;
+
+    IF OBJECT_ID(@RawUsersTable, N'U') IS NULL
+    BEGIN
+        THROW 50002, 'Required raw table for selected method does not exist.', 1;
     END;
 
     IF OBJECT_ID(N'[config].[Countries]', N'U') IS NULL
@@ -69,172 +96,160 @@ BEGIN
     BEGIN TRY
         BEGIN TRAN;
 
-        TRUNCATE TABLE [stage].[Users];
+        SET @Sql = N'TRUNCATE TABLE ' + @StageUsersTable + N';';
+        EXEC (@Sql);
 
-        INSERT INTO [stage].[Users]
-        (
-            [FirstName],
-            [LastName],
-            [Email],
-            [Username],
-            [DateOfBirth],
-            [RegistrationDate],
-            [Country],
-            [City],
-            [Gender],
-            [AccountCreatedVia],
-            [ReferralSource],
-            [SubscriptionTier],
-            [BillingCycle],
-            [PaymentMethod],
-            [AutoRenew],
-            [MarketingConsent],
-            [PreferredLanguage],
-            [ContentLanguage],
-            [PlanAddons],
-            [LastRefreshedDate]
-        )
-        SELECT
-            r.[FirstName],
-            r.[LastName],
-            r.[Email],
-            r.[Username],
-            r.[DateOfBirth],
-            r.[RegistrationDate],
-            r.[Country],
-            r.[City],
-            r.[Gender],
-            r.[AccountCreatedVia],
-            r.[ReferralSource],
-            r.[SubscriptionTier],
-            r.[BillingCycle],
-            r.[PaymentMethod],
-            CASE WHEN r.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END AS [AutoRenew],
-            CASE WHEN r.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END AS [MarketingConsent],
-            r.[PreferredLanguage],
-            r.[ContentLanguage],
-            r.[PlanAddons],
-            CURRENT_TIMESTAMP AS [LastRefreshedDate]
-        FROM
-            [raw].[Users] AS r;
+        SET @Sql = N'
+            INSERT INTO ' + @StageUsersTable + N'
+            (
+                [FirstName], [LastName], [Email], [Username], [DateOfBirth], [RegistrationDate],
+                [Country], [City], [Gender], [AccountCreatedVia], [ReferralSource], [SubscriptionTier],
+                [BillingCycle], [PaymentMethod], [AutoRenew], [MarketingConsent], [PreferredLanguage],
+                [ContentLanguage], [PlanAddons], [LastRefreshedDate]
+            )
+            SELECT
+                r.[FirstName], r.[LastName], r.[Email], r.[Username], r.[DateOfBirth], r.[RegistrationDate],
+                r.[Country], r.[City], r.[Gender], r.[AccountCreatedVia], r.[ReferralSource], r.[SubscriptionTier],
+                r.[BillingCycle], r.[PaymentMethod],
+                CASE WHEN r.[AutoRenew] = ''1'' THEN ''Yes'' ELSE ''No'' END,
+                CASE WHEN r.[MarketingConsent] = ''1'' THEN ''Yes'' ELSE ''No'' END,
+                r.[PreferredLanguage], r.[ContentLanguage], r.[PlanAddons], CURRENT_TIMESTAMP
+            FROM ' + @RawUsersTable + N' AS r;
+            SET @OutRows = @@ROWCOUNT;';
 
-        SET @RowsRead = @@ROWCOUNT;
+        EXEC sys.sp_executesql
+            @Sql,
+            N'@OutRows BIGINT OUTPUT',
+            @OutRows = @RowsRead output;
+
         SET @RowsWritten = @RowsRead;
         SET @RowsInserted = @RowsRead;
 
-        UPDATE s
-        SET
-            s.[FirstName] = TRIM(s.[FirstName]),
-            s.[LastName] = TRIM(s.[LastName]),
-            s.[Email] = LOWER(TRIM(s.[Email])),
-            s.[Username] = LOWER(TRIM(s.[Username])),
-            s.[Country] = TRIM(s.[Country]),
-            s.[City] = TRIM(s.[City]),
-            s.[Gender] = TRIM(s.[Gender]),
-            s.[AccountCreatedVia] = TRIM(s.[AccountCreatedVia]),
-            s.[ReferralSource] = TRIM(s.[ReferralSource]),
-            s.[SubscriptionTier] = TRIM(s.[SubscriptionTier]),
-            s.[BillingCycle] = TRIM(s.[BillingCycle]),
-            s.[PaymentMethod] = TRIM(s.[PaymentMethod]),
-            s.[PreferredLanguage] = LOWER(TRIM(s.[PreferredLanguage])),
-            s.[ContentLanguage] = LOWER(TRIM(s.[ContentLanguage])),
-            s.[PlanAddons] = TRIM(s.[PlanAddons])
-        FROM
-            [stage].[Users] AS s;
+        SET @Sql = N'
+            UPDATE s
+            SET
+                s.[FirstName] = TRIM(s.[FirstName]),
+                s.[LastName] = TRIM(s.[LastName]),
+                s.[Email] = LOWER(TRIM(s.[Email])),
+                s.[Username] = LOWER(TRIM(s.[Username])),
+                s.[Country] = TRIM(s.[Country]),
+                s.[City] = TRIM(s.[City]),
+                s.[Gender] = TRIM(s.[Gender]),
+                s.[AccountCreatedVia] = TRIM(s.[AccountCreatedVia]),
+                s.[ReferralSource] = TRIM(s.[ReferralSource]),
+                s.[SubscriptionTier] = TRIM(s.[SubscriptionTier]),
+                s.[BillingCycle] = TRIM(s.[BillingCycle]),
+                s.[PaymentMethod] = TRIM(s.[PaymentMethod]),
+                s.[PreferredLanguage] = LOWER(TRIM(s.[PreferredLanguage])),
+                s.[ContentLanguage] = LOWER(TRIM(s.[ContentLanguage])),
+                s.[PlanAddons] = TRIM(s.[PlanAddons])
+            FROM ' + @StageUsersTable + N' AS s;
+            SET @OutRows = @@ROWCOUNT;';
 
-        SET @RowsUpdated += @@ROWCOUNT;
+        EXEC sys.sp_executesql
+            @Sql,
+            N'@OutRows BIGINT OUTPUT',
+            @OutRows = @RowsTouched output;
 
-        UPDATE s
-        SET
-            s.[FullName] = CONCAT(ISNULL(s.[FirstName], ''), ' ', ISNULL(s.[LastName], '')),
-            s.[YearOfBirth] =
-            CASE
-                WHEN s.[DateOfBirth] IS NULL THEN NULL
-                ELSE CAST(YEAR(s.[DateOfBirth]) AS VARCHAR(4))
-            END,
-            s.[MonthOfBirth] =
-            CASE
-                WHEN s.[DateOfBirth] IS NULL THEN NULL
-                ELSE DATENAME(MONTH, s.[DateOfBirth])
-            END,
-            s.[DayOfBirth] =
-            CASE
-                WHEN s.[DateOfBirth] IS NULL THEN NULL
-                ELSE RIGHT(CONCAT('0', CAST(DAY(s.[DateOfBirth]) AS VARCHAR(2))), 2)
-            END,
-            s.[LastRefreshedDate] = CURRENT_TIMESTAMP
-        FROM
-            [stage].[Users] AS s;
+        SET @RowsUpdated += @RowsTouched;
 
-        SET @RowsUpdated += @@ROWCOUNT;
+        SET @Sql = N'
+            UPDATE s
+            SET
+                s.[FullName] = CONCAT(ISNULL(s.[FirstName], ''''), '' '', ISNULL(s.[LastName], '''')),
+                s.[YearOfBirth] = CASE WHEN s.[DateOfBirth] IS NULL THEN NULL ELSE CAST(YEAR(s.[DateOfBirth]) AS VARCHAR(4)) END,
+                s.[MonthOfBirth] = CASE WHEN s.[DateOfBirth] IS NULL THEN NULL ELSE DATENAME(MONTH, s.[DateOfBirth]) END,
+                s.[DayOfBirth] = CASE WHEN s.[DateOfBirth] IS NULL THEN NULL ELSE RIGHT(CONCAT(''0'', CAST(DAY(s.[DateOfBirth]) AS VARCHAR(2))), 2) END,
+                s.[LastRefreshedDate] = CURRENT_TIMESTAMP
+            FROM ' + @StageUsersTable + N' AS s;
+            SET @OutRows = @@ROWCOUNT;';
 
-        UPDATE s
-        SET
-            s.[CountryCode] = c.[CountryCode]
-        FROM
-            [stage].[Users] AS s
-        LEFT JOIN [config].[Countries] AS c
-            ON s.[Country] = c.[CountryName];
+        EXEC sys.sp_executesql
+            @Sql,
+            N'@OutRows BIGINT OUTPUT',
+            @OutRows = @RowsTouched output;
 
-        SET @RowsUpdated += @@ROWCOUNT;
+        SET @RowsUpdated += @RowsTouched;
 
-        UPDATE s
-        SET
-            s.[SubscriptionTierRank] = t.[TierRank],
-            s.[IsPaidTier] =
-            CASE
-                WHEN t.[IsPaid] = 1 THEN 'Yes'
-                WHEN t.[IsPaid] = 0 THEN 'No'
-            END
-        FROM
-            [stage].[Users] AS s
-        LEFT JOIN [config].[SubscriptionTiers] AS t
-            ON s.[SubscriptionTier] = t.[TierCode];
+        SET @Sql = N'
+            UPDATE s
+            SET s.[CountryCode] = c.[CountryCode]
+            FROM ' + @StageUsersTable + N' AS s
+            LEFT JOIN [config].[Countries] AS c
+                ON s.[Country] = c.[CountryName];
+            SET @OutRows = @@ROWCOUNT;';
 
-        SET @RowsUpdated += @@ROWCOUNT;
+        EXEC sys.sp_executesql
+            @Sql,
+            N'@OutRows BIGINT OUTPUT',
+            @OutRows = @RowsTouched output;
 
-        UPDATE s
-        SET
-            s.[PaymentMethodGroup] = p.[PaymentMethodGroup],
-            s.[IsCardBased] = CASE
-                WHEN p.[IsCardBased] = 1 THEN 'Yes'
-                WHEN p.[IsCardBased] = 0 THEN 'No'
-            END
-        FROM
-            [stage].[Users] AS s
-        LEFT JOIN [config].[PaymentMethods] AS p
-            ON s.[PaymentMethod] = p.[PaymentMethodCode];
+        SET @RowsUpdated += @RowsTouched;
 
-        SET @RowsUpdated += @@ROWCOUNT;
+        SET @Sql = N'
+            UPDATE s
+            SET
+                s.[SubscriptionTierRank] = t.[TierRank],
+                s.[IsPaidTier] = CASE WHEN t.[IsPaid] = 1 THEN ''Yes'' WHEN t.[IsPaid] = 0 THEN ''No'' END
+            FROM ' + @StageUsersTable + N' AS s
+            LEFT JOIN [config].[SubscriptionTiers] AS t
+                ON s.[SubscriptionTier] = t.[TierCode];
+            SET @OutRows = @@ROWCOUNT;';
 
-        UPDATE s
-        SET
-            s.[Hashdata] = CONCAT(
-                ISNULL(s.[Email], ''), '|',
-                ISNULL(s.[Username], ''), '|',
-                ISNULL(s.[SubscriptionTier], ''), '|',
-                ISNULL(s.[BillingCycle], ''), '|',
-                ISNULL(s.[PaymentMethod], ''), '|',
-                ISNULL(s.[AutoRenew], ''), '|',
-                ISNULL(s.[MarketingConsent], ''), '|',
-                ISNULL(s.[PreferredLanguage], ''), '|',
-                ISNULL(s.[ContentLanguage], ''), '|',
-                ISNULL(s.[PlanAddons], '')
-            ),
-            s.[Rowhash] = HASHBYTES('SHA2_256', CONCAT(
-                ISNULL(s.[Email], ''), '|',
-                ISNULL(s.[Username], ''), '|',
-                ISNULL(s.[SubscriptionTier], ''), '|',
-                ISNULL(s.[BillingCycle], ''), '|',
-                ISNULL(s.[PaymentMethod], ''), '|',
-                ISNULL(s.[AutoRenew], ''), '|',
-                ISNULL(s.[MarketingConsent], ''), '|',
-                ISNULL(s.[PreferredLanguage], ''), '|',
-                ISNULL(s.[ContentLanguage], ''), '|',
-                ISNULL(s.[PlanAddons], '')
-            ))
-        FROM
-            [stage].[Users] AS s;
+        EXEC sys.sp_executesql
+            @Sql,
+            N'@OutRows BIGINT OUTPUT',
+            @OutRows = @RowsTouched output;
+
+        SET @RowsUpdated += @RowsTouched;
+
+        SET @Sql = N'
+            UPDATE s
+            SET
+                s.[PaymentMethodGroup] = p.[PaymentMethodGroup],
+                s.[IsCardBased] = CASE WHEN p.[IsCardBased] = 1 THEN ''Yes'' WHEN p.[IsCardBased] = 0 THEN ''No'' END
+            FROM ' + @StageUsersTable + N' AS s
+            LEFT JOIN [config].[PaymentMethods] AS p
+                ON s.[PaymentMethod] = p.[PaymentMethodCode];
+            SET @OutRows = @@ROWCOUNT;';
+
+        EXEC sys.sp_executesql
+            @Sql,
+            N'@OutRows BIGINT OUTPUT',
+            @OutRows = @RowsTouched output;
+
+        SET @RowsUpdated += @RowsTouched;
+
+        SET @Sql = N'
+            UPDATE s
+            SET
+                s.[Hashdata] = CONCAT(
+                    ISNULL(s.[Email], ''''), ''|'',
+                    ISNULL(s.[Username], ''''), ''|'',
+                    ISNULL(s.[SubscriptionTier], ''''), ''|'',
+                    ISNULL(s.[BillingCycle], ''''), ''|'',
+                    ISNULL(s.[PaymentMethod], ''''), ''|'',
+                    ISNULL(s.[AutoRenew], ''''), ''|'',
+                    ISNULL(s.[MarketingConsent], ''''), ''|'',
+                    ISNULL(s.[PreferredLanguage], ''''), ''|'',
+                    ISNULL(s.[ContentLanguage], ''''), ''|'',
+                    ISNULL(s.[PlanAddons], '''')
+                ),
+                s.[Rowhash] = HASHBYTES(''SHA2_256'', CONCAT(
+                    ISNULL(s.[Email], ''''), ''|'',
+                    ISNULL(s.[Username], ''''), ''|'',
+                    ISNULL(s.[SubscriptionTier], ''''), ''|'',
+                    ISNULL(s.[BillingCycle], ''''), ''|'',
+                    ISNULL(s.[PaymentMethod], ''''), ''|'',
+                    ISNULL(s.[AutoRenew], ''''), ''|'',
+                    ISNULL(s.[MarketingConsent], ''''), ''|'',
+                    ISNULL(s.[PreferredLanguage], ''''), ''|'',
+                    ISNULL(s.[ContentLanguage], ''''), ''|'',
+                    ISNULL(s.[PlanAddons], '''')
+                ))
+            FROM ' + @StageUsersTable + N' AS s;';
+
+        EXEC (@Sql);
 
         SET @RowsScanned = @RowsRead + @RowsUpdated;
 

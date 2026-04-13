@@ -4,7 +4,7 @@ from random import random
 import numpy as np
 import pandas as pd
 
-from src.utils.utils import COUNTRY_LANGUAGE_MAP, random_date
+from data_generator.utils.utils import COUNTRY_LANGUAGE_MAP, random_date
 
 
 def generate_new_users(day, df, start_date):

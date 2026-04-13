@@ -3,8 +3,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from src.generate_new_users import COUNTRY_LANGUAGE_MAP
-from src.utils.utils import COUNTRY_CITY_MAP, random_date
+from data_generator.generate_new_users import COUNTRY_LANGUAGE_MAP
+from data_generator.utils.utils import COUNTRY_CITY_MAP, random_date
 
 
 def generate_initial_snapshot(N=1_000_000, zipf_s=1.0):

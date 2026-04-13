@@ -61,15 +61,15 @@ Monitoring objects log both pipeline-level and procedure-level execution metadat
 
 ### Python generator and utilities
 
-- `src/data_generator.py`: Main entry point.
-- `src/simulate.py`: Simulation orchestration across days.
-- `src/generate_initial_snapshot.py`: Day-0 dataset creation.
-- `src/generate_new_users.py`: Daily user growth logic.
-- `src/clustered_modify.py`: Controlled attribute modifications.
-- `src/adls/prepare_directory.py`: ADLS path preparation.
-- `src/adls/upload_snapshots.py`: Snapshot upload logic.
-- `src/adls/clean_filesystem.py`: Optional ADLS cleanup helper.
-- `src/utils/utils.py`: Shared utility helpers.
+- `data_generator/data_generator.py`: Main entry point.
+- `data_generator/simulate.py`: Simulation orchestration across days.
+- `data_generator/generate_initial_snapshot.py`: Day-0 dataset creation.
+- `data_generator/generate_new_users.py`: Daily user growth logic.
+- `data_generator/clustered_modify.py`: Controlled attribute modifications.
+- `data_generator/adls/prepare_directory.py`: ADLS path preparation.
+- `data_generator/adls/upload_snapshots.py`: Snapshot upload logic.
+- `data_generator/adls/clean_filesystem.py`: Optional ADLS cleanup helper.
+- `data_generator/utils/utils.py`: Shared utility helpers.
 
 ### Azure Data Factory assets
 
@@ -181,7 +181,7 @@ This avoids automatic object drops and reduces destructive deployment risk.
 python -m venv .venv
 . .venv/Scripts/activate
 pip install -r requirements.txt
-python src/data_generator.py
+python -m data_generator.data_generator
 ```
 
 Optional runtime overrides:

@@ -26,7 +26,7 @@ jobs:
           pip install azure-storage-file-datalake
 
       - name: Delete filesystem if exists
-        run: python src/adls/clean_filesystem.py
+        run: python data_generator/adls/clean_filesystem.py
         env:
           DATALAKE_CONNECTION_STRING: ${{ secrets.DATALAKE_CONNECTION_STRING }}
           DATALAKE_FILE_SYSTEM: ${{ env.ADLS_FILE_SYSTEM }}
@@ -50,7 +50,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Create data directory
-        run: python src/adls/prepare_directory.py
+        run: python data_generator/adls/prepare_directory.py
         env:
           DATALAKE_CONNECTION_STRING: ${{ secrets.DATALAKE_CONNECTION_STRING }}
           DATALAKE_FILE_SYSTEM: ${{ env.ADLS_FILE_SYSTEM }}
@@ -75,7 +75,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Generate and upload
-        run: python -m src.data_generator
+        run: python -m data_generator.data_generator
         env:
           DATALAKE_CONNECTION_STRING: ${{ secrets.DATALAKE_CONNECTION_STRING }}
           DATALAKE_KEY: ${{ secrets.DATALAKE_KEY }}

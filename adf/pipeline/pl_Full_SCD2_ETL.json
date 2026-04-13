@@ -322,6 +322,13 @@
 								"type": "Expression"
 							},
 							"type": "String"
+						},
+						"SCD2Method": {
+							"value": {
+								"value": "@pipeline().parameters.SCD2Method",
+								"type": "Expression"
+							},
+							"type": "String"
 						}
 					}
 				},
@@ -356,6 +363,13 @@
 						"PipelineRunId": {
 							"value": {
 								"value": "@pipeline().parameters.MasterPipelineRunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SCD2Method": {
+							"value": {
+								"value": "@pipeline().parameters.SCD2Method",
 								"type": "Expression"
 							},
 							"type": "String"

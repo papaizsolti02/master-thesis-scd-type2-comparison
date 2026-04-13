@@ -1,7 +1,7 @@
 from pathlib import Path
-from src.simulate import simulate
-from src.adls.upload_snapshots import upload_snapshots
-from src.utils.utils import OUTPUT_DIR
+from data_generator.simulate import simulate
+from data_generator.adls.upload_snapshots import upload_snapshots
+from data_generator.utils.utils import OUTPUT_DIR
 
 
 if __name__ == "__main__":

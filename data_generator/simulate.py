@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
-from src.clustered_modify import clustered_modify
-from src.generate_initial_snapshot import generate_initial_snapshot
-from src.generate_new_users import generate_new_users
-from src.utils.utils import C_VALUES, GRID, OUTPUT_DIR, R_VALUES, get_rc_for_day, set_seed, weibull_hazard
+from data_generator.clustered_modify import clustered_modify
+from data_generator.generate_initial_snapshot import generate_initial_snapshot
+from data_generator.generate_new_users import generate_new_users
+from data_generator.utils.utils import C_VALUES, GRID, OUTPUT_DIR, R_VALUES, get_rc_for_day, set_seed, weibull_hazard
 
 
 def simulate(seed=1, N_initial=1000000, save_snapshots=True):

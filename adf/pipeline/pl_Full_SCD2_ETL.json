@@ -29,7 +29,7 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"preCopyScript": "TRUNCATE TABLE [raw].[Users]",
+						"preCopyScript": "TRUNCATE TABLE [full_scd2].[raw_Users]",
 						"writeBehavior": "insert",
 						"sqlWriterUseTableLock": false,
 						"disableMetricsCollection": false
@@ -288,7 +288,7 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "raw_users_table",
+						"referenceName": "full_scd2_raw_users_table",
 						"type": "DatasetReference"
 					}
 				]
@@ -319,6 +319,13 @@
 						"PipelineRunId": {
 							"value": {
 								"value": "@pipeline().parameters.MasterPipelineRunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SCD2Method": {
+							"value": {
+								"value": "@pipeline().parameters.SCD2Method",
 								"type": "Expression"
 							},
 							"type": "String"
@@ -356,6 +363,13 @@
 						"PipelineRunId": {
 							"value": {
 								"value": "@pipeline().parameters.MasterPipelineRunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"SCD2Method": {
+							"value": {
+								"value": "@pipeline().parameters.SCD2Method",
 								"type": "Expression"
 							},
 							"type": "String"

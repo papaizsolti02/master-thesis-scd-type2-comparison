@@ -25,6 +25,6 @@ CREATE TABLE [snapshot_scd2].[TodayComparableUsers]
 );
 GO
 
-CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_TodayComparable_Rowhash]
-    ON [snapshot_scd2].[TodayComparable] ([Rowhash]);
+CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_TodayComparableUsers_Rowhash]
+    ON [snapshot_scd2].[TodayComparableUsers] ([Rowhash]);
 GO

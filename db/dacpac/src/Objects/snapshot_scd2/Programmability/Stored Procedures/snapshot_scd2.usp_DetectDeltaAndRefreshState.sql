@@ -108,12 +108,34 @@ BEGIN
 
         INSERT INTO [snapshot_scd2].[TodayComparable]
         (
-            [Email], [Username], [SubscriptionTier], [BillingCycle], [PaymentMethod], [AutoRenew],
-            [MarketingConsent], [PreferredLanguage], [ContentLanguage], [PlanAddons], [Hashdata], [Rowhash], [LastRefreshedDate]
+            [Email],
+            [Username],
+            [SubscriptionTier],
+            [BillingCycle],
+            [PaymentMethod],
+            [AutoRenew],
+            [MarketingConsent],
+            [PreferredLanguage],
+            [ContentLanguage],
+            [PlanAddons],
+            [Hashdata],
+            [Rowhash],
+            [LastRefreshedDate]
         )
         SELECT
-            c.[Email], c.[Username], c.[SubscriptionTier], c.[BillingCycle], c.[PaymentMethod], c.[AutoRenew],
-            c.[MarketingConsent], c.[PreferredLanguage], c.[ContentLanguage], c.[PlanAddons], c.[Hashdata], c.[Rowhash], SYSUTCDATETIME()
+            c.[Email],
+            c.[Username],
+            c.[SubscriptionTier],
+            c.[BillingCycle],
+            c.[PaymentMethod],
+            c.[AutoRenew],
+            c.[MarketingConsent],
+            c.[PreferredLanguage],
+            c.[ContentLanguage],
+            c.[PlanAddons],
+            c.[Hashdata],
+            c.[Rowhash],
+            SYSUTCDATETIME()
         FROM #CurrentComparable AS c
         LEFT JOIN [snapshot_scd2].[UserComparableState] AS s
             ON ISNULL(s.[Rowhash], 0x0) = ISNULL(c.[Rowhash], 0x0)
@@ -126,12 +148,34 @@ BEGIN
 
         INSERT INTO [snapshot_scd2].[UserComparableState]
         (
-            [Email], [Username], [SubscriptionTier], [BillingCycle], [PaymentMethod], [AutoRenew],
-            [MarketingConsent], [PreferredLanguage], [ContentLanguage], [PlanAddons], [Hashdata], [Rowhash], [LastRefreshedDate]
+            [Email],
+            [Username],
+            [SubscriptionTier],
+            [BillingCycle],
+            [PaymentMethod],
+            [AutoRenew],
+            [MarketingConsent],
+            [PreferredLanguage],
+            [ContentLanguage],
+            [PlanAddons],
+            [Hashdata],
+            [Rowhash],
+            [LastRefreshedDate]
         )
         SELECT
-            c.[Email], c.[Username], c.[SubscriptionTier], c.[BillingCycle], c.[PaymentMethod], c.[AutoRenew],
-            c.[MarketingConsent], c.[PreferredLanguage], c.[ContentLanguage], c.[PlanAddons], c.[Hashdata], c.[Rowhash], SYSUTCDATETIME()
+            c.[Email],
+            c.[Username],
+            c.[SubscriptionTier],
+            c.[BillingCycle],
+            c.[PaymentMethod],
+            c.[AutoRenew],
+            c.[MarketingConsent],
+            c.[PreferredLanguage],
+            c.[ContentLanguage],
+            c.[PlanAddons],
+            c.[Hashdata],
+            c.[Rowhash],
+            SYSUTCDATETIME()
         FROM #CurrentComparable AS c;
 
         SET @RowsRead = (SELECT COUNT_BIG(1) FROM [snapshot_scd2].[raw_Users]);

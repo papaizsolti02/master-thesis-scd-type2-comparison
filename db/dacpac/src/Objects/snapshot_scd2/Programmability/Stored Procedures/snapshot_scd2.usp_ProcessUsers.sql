@@ -1,12 +1,12 @@
--- ----------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 -- Author: Csaba-Zsolt Papai
--- Date: 2026-04-14
--- Name: snapshot_scd2.usp_DetectDeltaAndRefreshState
--- Description: Builds today comparable rows, detects delta by Rowhash, refreshes comparable state.
+-- Date: 2026-04-18
+-- Name: snapshot_scd2.usp_ProcessUsers
+-- Description: Snapshot SCD2 staging procedure.
 -- Version: 1.0
--- ----------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
 
-CREATE PROCEDURE [snapshot_scd2].[usp_DetectDeltaAndRefreshState]
+CREATE PROCEDURE [snapshot_scd2].[usp_ProcessUsers]
     @PipelineRunId NVARCHAR(128) = NULL
 AS
 BEGIN
@@ -14,17 +14,16 @@ BEGIN
     SET XACT_ABORT ON;
 
     DECLARE @NormalizedPipelineRunId NVARCHAR(128) = NULLIF(TRIM(@PipelineRunId), '');
-    DECLARE @ProcStartUtc DATETIME2(3) = SYSUTCDATETIME();
-    DECLARE @ProcEndUtc DATETIME2(3) = NULL;
-    DECLARE @ProcObjectId INT = OBJECT_ID(N'[snapshot_scd2].[usp_DetectDeltaAndRefreshState]');
-
     DECLARE @RowsRead BIGINT = 0;
     DECLARE @RowsScanned BIGINT = 0;
     DECLARE @RowsWritten BIGINT = 0;
     DECLARE @RowsInserted BIGINT = 0;
     DECLARE @RowsUpdated BIGINT = 0;
     DECLARE @RowsExpired BIGINT = 0;
-    DECLARE @DeltaCount BIGINT = 0;
+
+    DECLARE @ProcStartUtc DATETIME2(3) = SYSUTCDATETIME();
+    DECLARE @ProcEndUtc DATETIME2(3) = NULL;
+    DECLARE @ProcObjectId INT = OBJECT_ID(N'[snapshot_scd2].[usp_ProcessUsers]');
 
     DECLARE @CpuDelta BIGINT = NULL;
     DECLARE @LogicalReadsDelta BIGINT = NULL;
@@ -34,37 +33,67 @@ BEGIN
     DECLARE @ErrorNumber INT = NULL;
     DECLARE @ErrorMessage NVARCHAR(4000) = NULL;
 
-    IF OBJECT_ID(N'[snapshot_scd2].[raw_Users]', N'U') IS NULL
+    IF OBJECT_ID(N'[snapshot_scd2].[stage_Users]', N'U') IS NULL
     BEGIN
-        THROW 52001, 'Required table [snapshot_scd2].[raw_Users] does not exist.', 1;
+        THROW 54001, 'Required table [snapshot_scd2].[stage_Users] does not exist.', 1;
     END;
 
-    IF OBJECT_ID(N'[snapshot_scd2].[UserComparableState]', N'U') IS NULL
+    IF OBJECT_ID(N'[snapshot_scd2].[raw_Users]', N'U') IS NULL
     BEGIN
-        THROW 52002, 'Required table [snapshot_scd2].[UserComparableState] does not exist.', 1;
+        THROW 54002, 'Required table [snapshot_scd2].[raw_Users] does not exist.', 1;
     END;
 
     IF OBJECT_ID(N'[snapshot_scd2].[TodayComparableUsers]', N'U') IS NULL
     BEGIN
-        THROW 52003, 'Required table [snapshot_scd2].[TodayComparableUsers] does not exist.', 1;
+        THROW 54003, 'Required table [snapshot_scd2].[TodayComparableUsers] does not exist.', 1;
+    END;
+
+    IF OBJECT_ID(N'[snapshot_scd2].[UserComparableState]', N'U') IS NULL
+    BEGIN
+        THROW 54004, 'Required table [snapshot_scd2].[UserComparableState] does not exist.', 1;
+    END;
+
+    IF OBJECT_ID(N'[config].[Countries]', N'U') IS NULL
+    BEGIN
+        THROW 54005, 'Required table [config].[Countries] does not exist.', 1;
+    END;
+
+    IF OBJECT_ID(N'[config].[SubscriptionTiers]', N'U') IS NULL
+    BEGIN
+        THROW 54006, 'Required table [config].[SubscriptionTiers] does not exist.', 1;
+    END;
+
+    IF OBJECT_ID(N'[config].[PaymentMethods]', N'U') IS NULL
+    BEGIN
+        THROW 54007, 'Required table [config].[PaymentMethods] does not exist.', 1;
     END;
 
     IF @NormalizedPipelineRunId IS NOT NULL
     BEGIN
         EXEC [monitor].[usp_ProcedureRunStart]
             @PipelineRunId = @NormalizedPipelineRunId,
-            @ProcedureName = N'snapshot_scd2.usp_DetectDeltaAndRefreshState',
-            @ProcedurePhase = N'Other';
+            @ProcedureName = N'snapshot_scd2.usp_ProcessUsers',
+            @ProcedurePhase = N'Stage';
     END;
 
     BEGIN TRY
         BEGIN TRAN;
 
+        TRUNCATE TABLE [snapshot_scd2].[stage_Users];
         TRUNCATE TABLE [snapshot_scd2].[TodayComparableUsers];
 
         SELECT
+            r.[FirstName],
+            r.[LastName],
             r.[Email],
             r.[Username],
+            r.[DateOfBirth],
+            r.[RegistrationDate],
+            r.[Country],
+            r.[City],
+            r.[Gender],
+            r.[AccountCreatedVia],
+            r.[ReferralSource],
             r.[SubscriptionTier],
             r.[BillingCycle],
             r.[PaymentMethod],
@@ -102,6 +131,8 @@ BEGIN
             ) AS [Rowhash]
         INTO #CurrentComparable
         FROM [snapshot_scd2].[raw_Users] AS r;
+
+        SET @RowsRead = @@ROWCOUNT;
 
         CREATE NONCLUSTERED INDEX [IX__CurrentComparable_Rowhash]
             ON #CurrentComparable ([Rowhash]);
@@ -141,10 +172,10 @@ BEGIN
             ON ISNULL(s.[Rowhash], 0x0) = ISNULL(c.[Rowhash], 0x0)
         WHERE s.[Id] IS NULL;
 
-        SET @DeltaCount = @@ROWCOUNT;
+        SET @RowsInserted = @@ROWCOUNT;
+        SET @RowsWritten = @RowsInserted;
 
-        DELETE s
-        FROM [snapshot_scd2].[UserComparableState] AS s;
+        DELETE FROM [snapshot_scd2].[UserComparableState];
 
         INSERT INTO [snapshot_scd2].[UserComparableState]
         (
@@ -178,10 +209,145 @@ BEGIN
             SYSUTCDATETIME()
         FROM #CurrentComparable AS c;
 
-        SET @RowsRead = (SELECT COUNT_BIG(1) FROM [snapshot_scd2].[raw_Users]);
-        SET @RowsInserted = @DeltaCount;
-        SET @RowsWritten = @DeltaCount;
-        SET @RowsScanned = @RowsRead;
+        INSERT INTO [snapshot_scd2].[stage_Users]
+        (
+            [FirstName],
+            [LastName],
+            [Email],
+            [Username],
+            [DateOfBirth],
+            [RegistrationDate],
+            [Country],
+            [City],
+            [Gender],
+            [AccountCreatedVia],
+            [ReferralSource],
+            [SubscriptionTier],
+            [BillingCycle],
+            [PaymentMethod],
+            [AutoRenew],
+            [MarketingConsent],
+            [PreferredLanguage],
+            [ContentLanguage],
+            [PlanAddons],
+            [LastRefreshedDate]
+        )
+        SELECT
+            c.[FirstName],
+            c.[LastName],
+            c.[Email],
+            c.[Username],
+            c.[DateOfBirth],
+            c.[RegistrationDate],
+            c.[Country],
+            c.[City],
+            c.[Gender],
+            c.[AccountCreatedVia],
+            c.[ReferralSource],
+            c.[SubscriptionTier],
+            c.[BillingCycle],
+            c.[PaymentMethod],
+            CASE WHEN c.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END,
+            CASE WHEN c.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END,
+            c.[PreferredLanguage],
+            c.[ContentLanguage],
+            c.[PlanAddons],
+            CURRENT_TIMESTAMP
+        FROM #CurrentComparable AS c
+        INNER JOIN [snapshot_scd2].[TodayComparableUsers] AS t
+            ON ISNULL(t.[Rowhash], 0x0) = ISNULL(c.[Rowhash], 0x0);
+
+        SET @RowsWritten += @@ROWCOUNT;
+
+        UPDATE s
+        SET
+            s.[FirstName] = TRIM(s.[FirstName]),
+            s.[LastName] = TRIM(s.[LastName]),
+            s.[Email] = LOWER(TRIM(s.[Email])),
+            s.[Username] = LOWER(TRIM(s.[Username])),
+            s.[Country] = TRIM(s.[Country]),
+            s.[City] = TRIM(s.[City]),
+            s.[Gender] = TRIM(s.[Gender]),
+            s.[AccountCreatedVia] = TRIM(s.[AccountCreatedVia]),
+            s.[ReferralSource] = TRIM(s.[ReferralSource]),
+            s.[SubscriptionTier] = TRIM(s.[SubscriptionTier]),
+            s.[BillingCycle] = TRIM(s.[BillingCycle]),
+            s.[PaymentMethod] = TRIM(s.[PaymentMethod]),
+            s.[PreferredLanguage] = LOWER(TRIM(s.[PreferredLanguage])),
+            s.[ContentLanguage] = LOWER(TRIM(s.[ContentLanguage])),
+            s.[PlanAddons] = TRIM(s.[PlanAddons])
+        FROM [snapshot_scd2].[stage_Users] AS s;
+
+        SET @RowsUpdated += @@ROWCOUNT;
+
+        UPDATE s
+        SET
+            s.[FullName] = CONCAT(ISNULL(s.[FirstName], ''), ' ', ISNULL(s.[LastName], '')),
+            s.[YearOfBirth] = CASE WHEN s.[DateOfBirth] IS NULL THEN NULL ELSE CAST(YEAR(s.[DateOfBirth]) AS VARCHAR(4)) END,
+            s.[MonthOfBirth] = CASE WHEN s.[DateOfBirth] IS NULL THEN NULL ELSE DATENAME(MONTH, s.[DateOfBirth]) END,
+            s.[DayOfBirth] = CASE WHEN s.[DateOfBirth] IS NULL THEN NULL ELSE RIGHT(CONCAT('0', CAST(DAY(s.[DateOfBirth]) AS VARCHAR(2))), 2) END,
+            s.[LastRefreshedDate] = CURRENT_TIMESTAMP
+        FROM [snapshot_scd2].[stage_Users] AS s;
+
+        SET @RowsUpdated += @@ROWCOUNT;
+
+        UPDATE s
+        SET s.[CountryCode] = c.[CountryCode]
+        FROM [snapshot_scd2].[stage_Users] AS s
+        LEFT JOIN [config].[Countries] AS c
+            ON s.[Country] = c.[CountryName];
+
+        SET @RowsUpdated += @@ROWCOUNT;
+
+        UPDATE s
+        SET
+            s.[SubscriptionTierRank] = t.[TierRank],
+            s.[IsPaidTier] = CASE WHEN t.[IsPaid] = 1 THEN 'Yes' WHEN t.[IsPaid] = 0 THEN 'No' END
+        FROM [snapshot_scd2].[stage_Users] AS s
+        LEFT JOIN [config].[SubscriptionTiers] AS t
+            ON s.[SubscriptionTier] = t.[TierCode];
+
+        SET @RowsUpdated += @@ROWCOUNT;
+
+        UPDATE s
+        SET
+            s.[PaymentMethodGroup] = p.[PaymentMethodGroup],
+            s.[IsCardBased] = CASE WHEN p.[IsCardBased] = 1 THEN 'Yes' WHEN p.[IsCardBased] = 0 THEN 'No' END
+        FROM [snapshot_scd2].[stage_Users] AS s
+        LEFT JOIN [config].[PaymentMethods] AS p
+            ON s.[PaymentMethod] = p.[PaymentMethodCode];
+
+        SET @RowsUpdated += @@ROWCOUNT;
+
+        UPDATE s
+        SET
+            s.[Hashdata] = CONCAT(
+                ISNULL(s.[Email], ''), '|',
+                ISNULL(s.[Username], ''), '|',
+                ISNULL(s.[SubscriptionTier], ''), '|',
+                ISNULL(s.[BillingCycle], ''), '|',
+                ISNULL(s.[PaymentMethod], ''), '|',
+                ISNULL(s.[AutoRenew], ''), '|',
+                ISNULL(s.[MarketingConsent], ''), '|',
+                ISNULL(s.[PreferredLanguage], ''), '|',
+                ISNULL(s.[ContentLanguage], ''), '|',
+                ISNULL(s.[PlanAddons], '')
+            ),
+            s.[Rowhash] = HASHBYTES('SHA2_256', CONCAT(
+                ISNULL(s.[Email], ''), '|',
+                ISNULL(s.[Username], ''), '|',
+                ISNULL(s.[SubscriptionTier], ''), '|',
+                ISNULL(s.[BillingCycle], ''), '|',
+                ISNULL(s.[PaymentMethod], ''), '|',
+                ISNULL(s.[AutoRenew], ''), '|',
+                ISNULL(s.[MarketingConsent], ''), '|',
+                ISNULL(s.[PreferredLanguage], ''), '|',
+                ISNULL(s.[ContentLanguage], ''), '|',
+                ISNULL(s.[PlanAddons], '')
+            ))
+        FROM [snapshot_scd2].[stage_Users] AS s;
+
+        SET @RowsScanned = @RowsRead + @RowsUpdated;
 
         COMMIT TRAN;
 
@@ -199,16 +365,14 @@ BEGIN
                     @LogicalReadsDelta = CAST(SUM(CAST(rs.[avg_logical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
                     @PhysicalReadsDelta = CAST(SUM(CAST(rs.[avg_physical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
                     @WritesDelta = CAST(SUM(CAST(rs.[avg_logical_io_writes] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT)
-                FROM
-                    [sys].[query_store_query] AS q
+                FROM [sys].[query_store_query] AS q
                 INNER JOIN [sys].[query_store_plan] AS p
                     ON q.[query_id] = p.[query_id]
                 INNER JOIN [sys].[query_store_runtime_stats] AS rs
                     ON p.[plan_id] = rs.[plan_id]
                 INNER JOIN [sys].[query_store_runtime_stats_interval] AS rsi
                     ON rs.[runtime_stats_interval_id] = rsi.[runtime_stats_interval_id]
-                WHERE
-                    q.[object_id] = @ProcObjectId
+                WHERE q.[object_id] = @ProcObjectId
                     AND rsi.[start_time] < @ProcEndUtc
                     AND rsi.[end_time] > @ProcStartUtc;
             END TRY
@@ -224,7 +388,7 @@ BEGIN
         BEGIN
             EXEC [monitor].[usp_ProcedureRunFinish]
                 @PipelineRunId = @NormalizedPipelineRunId,
-                @ProcedureName = N'snapshot_scd2.usp_DetectDeltaAndRefreshState',
+                @ProcedureName = N'snapshot_scd2.usp_ProcessUsers',
                 @Status = N'Succeeded',
                 @RowsRead = @RowsRead,
                 @RowsScanned = @RowsScanned,
@@ -261,16 +425,14 @@ BEGIN
                     @LogicalReadsDelta = CAST(SUM(CAST(rs.[avg_logical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
                     @PhysicalReadsDelta = CAST(SUM(CAST(rs.[avg_physical_io_reads] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT),
                     @WritesDelta = CAST(SUM(CAST(rs.[avg_logical_io_writes] AS DECIMAL(38, 6)) * rs.[count_executions]) AS BIGINT)
-                FROM
-                    [sys].[query_store_query] AS q
+                FROM [sys].[query_store_query] AS q
                 INNER JOIN [sys].[query_store_plan] AS p
                     ON q.[query_id] = p.[query_id]
                 INNER JOIN [sys].[query_store_runtime_stats] AS rs
                     ON p.[plan_id] = rs.[plan_id]
                 INNER JOIN [sys].[query_store_runtime_stats_interval] AS rsi
                     ON rs.[runtime_stats_interval_id] = rsi.[runtime_stats_interval_id]
-                WHERE
-                    q.[object_id] = @ProcObjectId
+                WHERE q.[object_id] = @ProcObjectId
                     AND rsi.[start_time] < @ProcEndUtc
                     AND rsi.[end_time] > @ProcStartUtc;
             END TRY
@@ -287,7 +449,7 @@ BEGIN
             BEGIN TRY
                 EXEC [monitor].[usp_ProcedureRunFinish]
                     @PipelineRunId = @NormalizedPipelineRunId,
-                    @ProcedureName = N'snapshot_scd2.usp_DetectDeltaAndRefreshState',
+                    @ProcedureName = N'snapshot_scd2.usp_ProcessUsers',
                     @Status = N'Failed',
                     @RowsRead = @RowsRead,
                     @RowsScanned = @RowsScanned,

@@ -1,7 +1,7 @@
 -- ----------------------------------------------------------------------
 -- Author: Csaba-Zsolt Papai
 -- Date: 2026-04-14
--- Name: snapshot_scd2.TodayComparable
+-- Name: snapshot_scd2.TodayComparableUsers
 -- Description: Today comparable rows that passed snapshot delta detection.
 -- Version: 1.0
 -- ----------------------------------------------------------------------

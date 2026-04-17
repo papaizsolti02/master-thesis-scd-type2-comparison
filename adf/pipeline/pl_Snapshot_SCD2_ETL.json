@@ -1,10 +1,10 @@
 {
-	"name": "pl_Full_SCD2_ETL",
+	"name": "pl_Snapshot_SCD2_ETL",
 	"properties": {
 		"activities": [
 			{
 				"name": "Copy Raw Users to Raw Table",
-				"description": "Copy raw CSV users to the raw table: [full_scd2].[raw_Users]",
+				"description": "Copy raw CSV users to the raw table: [snapshot_scd2].[raw_Users]",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -29,7 +29,7 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"preCopyScript": "TRUNCATE TABLE [full_scd2].[raw_Users]",
+						"preCopyScript": "TRUNCATE TABLE [snapshot_scd2].[raw_Users]",
 						"writeBehavior": "insert",
 						"sqlWriterUseTableLock": false,
 						"disableMetricsCollection": false
@@ -288,14 +288,14 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "full_scd2_raw_users_table",
+						"referenceName": "snapshot_scd2_raw_users_table",
 						"type": "DatasetReference"
 					}
 				]
 			},
 			{
 				"name": "Execute Staging Stored Procedure",
-				"description": "Execute transformation staging stored procedure [full_scd2].[usp_ProcessUsers]",
+				"description": "Execute transformation staging stored procedure [snapshot_scd2].[usp_ProcessUsers]",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
@@ -314,7 +314,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[full_scd2].[usp_ProcessUsers]",
+					"storedProcedureName": "[snapshot_scd2].[usp_ProcessUsers]",
 					"storedProcedureParameters": {
 						"PipelineRunId": {
 							"value": {
@@ -332,7 +332,7 @@
 			},
 			{
 				"name": "Execute Merging Stored Procedure",
-				"description": "Execute merging stored procedure [full_scd2].[usp_MergeUsers]",
+				"description": "Execute merging stored procedure [snapshot_scd2].[usp_MergeUsers]",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
@@ -351,7 +351,7 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[full_scd2].[usp_MergeUsers]",
+					"storedProcedureName": "[snapshot_scd2].[usp_MergeUsers]",
 					"storedProcedureParameters": {
 						"PipelineRunId": {
 							"value": {

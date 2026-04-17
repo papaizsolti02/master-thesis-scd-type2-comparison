@@ -59,10 +59,10 @@ BEGIN
 	BEGIN TRY
 		BEGIN TRAN;
 
-		SELECT @RowsRead = COUNT_BIG(1)
+		SELECT @RowsRead = COUNT_BIG(*)
 		FROM [snapshot_scd2].[stage_Users];
 
-		SELECT @MatchedCount = COUNT(1)
+		SELECT @MatchedCount = COUNT(*)
 		FROM [snapshot_scd2].[stage_Users] AS s
 		INNER JOIN [snapshot_scd2].[prod_Users] AS p
 			ON p.[IsActive] = 1

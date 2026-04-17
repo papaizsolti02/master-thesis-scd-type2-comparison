@@ -1,21 +1,47 @@
-name: Trigger Full SCD2 ADF Pipeline
+name: Trigger SCD2 ETL ADF Pipeline
 
 on:
   workflow_dispatch:
     inputs:
+      SCD2Method:
+        description: "SCD2 method parameter passed to ADF"
+        required: true
+        type: choice
+        options:
+          - FullSCD2
+          - SnapshotSCD2
+          - MerkleSCD2
+        default: FullSCD2
       fileName:
-        description: "Input file name parameter for ADF pipeline"
+        description: "Input file name parameter passed to ADF"
         required: true
         type: string
+        default: "users_day000.csv"
       EnvironmentName:
         description: "EnvironmentName parameter for ADF pipeline"
         required: true
         type: choice
         options:
           - Development
-          - Testing
-          - QA
           - Production
+      waitForCompletion:
+        description: "Wait until pipeline finishes"
+        required: true
+        type: choice
+        options:
+          - "true"
+          - "false"
+        default: "true"
+      maxAttempts:
+        description: "Polling attempts when waiting"
+        required: true
+        type: number
+        default: 120
+      sleepSeconds:
+        description: "Seconds between polling attempts"
+        required: true
+        type: number
+        default: 15
 
 permissions:
   id-token: write
@@ -25,12 +51,11 @@ jobs:
   run-adf-pipeline:
     name: Run ADF Pipeline
     runs-on: ubuntu-latest
-    environment: ${{ inputs.EnvironmentName == 'Development' && 'dev' || inputs.EnvironmentName == 'Testing' && 'test' || inputs.EnvironmentName == 'QA' && 'qa' || inputs.EnvironmentName == 'Production' && 'prod' }}
+    environment: ${{ inputs.EnvironmentName == 'Development' && 'dev' || inputs.EnvironmentName == 'Production' && 'prod' }}
 
     env:
       ADF_RESOURCE_GROUP: ${{ vars.ADF_RESOURCE_GROUP }}
       ADF_FACTORY_NAME: ${{ vars.ADF_FACTORY_NAME }}
-      ADF_PIPELINE_NAME: ${{ vars.ADF_PIPELINE_NAME }}
 
     steps:
       - name: Checkout
@@ -58,44 +83,39 @@ jobs:
             exit 1
           fi
 
-          if [ -z "${ADF_PIPELINE_NAME}" ]; then
-            echo "ADF_PIPELINE_NAME is not set. Configure it as an Environment Variable in GitHub."
-            exit 1
-          fi
-
       - name: Trigger ADF pipeline
         id: trigger
         shell: bash
         run: |
           set -euo pipefail
 
-          PARAMS="{\"fileName\":\"${{ inputs.fileName }}\",\"SCD2Method\":\"FullSCD2\",\"EnvironmentName\":\"${{ inputs.EnvironmentName }}\"}"
+          PARAMS="{\"fileName\":\"${{ inputs.fileName }}\",\"SCD2Method\":\"${{ inputs.SCD2Method }}\",\"EnvironmentName\":\"${{ inputs.EnvironmentName }}\"}"
           
           echo "DEBUG: Resource Group = $ADF_RESOURCE_GROUP"
           echo "DEBUG: Factory Name = $ADF_FACTORY_NAME"
-          echo "DEBUG: Pipeline Name = $ADF_PIPELINE_NAME"
+          echo "DEBUG: SCD2 Method = ${{ inputs.SCD2Method }}"
           echo "DEBUG: Parameters = $PARAMS"
 
           RUN_ID=$(az datafactory pipeline create-run \
             --resource-group "$ADF_RESOURCE_GROUP" \
             --factory-name "$ADF_FACTORY_NAME" \
-            --name "$ADF_PIPELINE_NAME" \
+            --name "pl_Master_SCD2_ETL" \
             --parameters "$PARAMS" \
             --query runId \
-            --output tsv \
-            --debug)
+            --output tsv)
 
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           echo "Started ADF runId: $RUN_ID"
 
       - name: Wait for ADF run completion
+        if: ${{ inputs.waitForCompletion == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
 
           RUN_ID='${{ steps.trigger.outputs.run_id }}'
-          MAX_ATTEMPTS=120
-          SLEEP_SECONDS=15
+          MAX_ATTEMPTS='${{ inputs.maxAttempts }}'
+          SLEEP_SECONDS='${{ inputs.sleepSeconds }}'
 
           for ((i=1; i<=MAX_ATTEMPTS; i++)); do
             STATUS=$(az datafactory pipeline-run show \

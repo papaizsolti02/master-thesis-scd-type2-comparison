@@ -295,7 +295,7 @@
 			},
 			{
 				"name": "Execute Staging Stored Procedure",
-				"description": "Execute transformation staging stored procedure [stage].[usp_ProcessUsers]",
+				"description": "Execute transformation staging stored procedure [full_scd2].[usp_ProcessUsers]",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
@@ -314,18 +314,11 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[stage].[usp_ProcessUsers]",
+					"storedProcedureName": "[full_scd2].[usp_ProcessUsers]",
 					"storedProcedureParameters": {
 						"PipelineRunId": {
 							"value": {
 								"value": "@pipeline().parameters.MasterPipelineRunId",
-								"type": "Expression"
-							},
-							"type": "String"
-						},
-						"SCD2Method": {
-							"value": {
-								"value": "@pipeline().parameters.SCD2Method",
 								"type": "Expression"
 							},
 							"type": "String"
@@ -339,7 +332,7 @@
 			},
 			{
 				"name": "Execute Merging Stored Procedure",
-				"description": "Execute merging stored procedure [prod].[usp_MergeUsers]",
+				"description": "Execute merging stored procedure [full_scd2].[usp_MergeUsers]",
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
@@ -358,18 +351,11 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[prod].[usp_MergeUsers]",
+					"storedProcedureName": "[full_scd2].[usp_MergeUsers]",
 					"storedProcedureParameters": {
 						"PipelineRunId": {
 							"value": {
 								"value": "@pipeline().parameters.MasterPipelineRunId",
-								"type": "Expression"
-							},
-							"type": "String"
-						},
-						"SCD2Method": {
-							"value": {
-								"value": "@pipeline().parameters.SCD2Method",
 								"type": "Expression"
 							},
 							"type": "String"

@@ -37,14 +37,14 @@
 						},
 						"ErrorCode": {
 							"value": {
-								"value": "@activity('Execute Full SCD2 ETL').output.error.errorCode",
+								"value": "@activity('Execute Full SCD2 ETL').error.code",
 								"type": "Expression"
 							},
 							"type": "String"
 						},
 						"ErrorMessage": {
 							"value": {
-								"value": "@activity('Execute Full SCD2 ETL').output.error.errorMessage",
+								"value": "@activity('Execute Full SCD2 ETL').error.message",
 								"type": "Expression"
 							},
 							"type": "String"

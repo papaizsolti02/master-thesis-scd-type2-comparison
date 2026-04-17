@@ -1,5 +1,5 @@
 {
-	"name": "pl_Master_Full_SCD2_ETL",
+	"name": "pl_Master_SCD2_ETL",
 	"properties": {
 		"activities": [
 			{
@@ -7,7 +7,7 @@
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
-						"activity": "Execute Full SCD2 ETL",
+						"activity": "Choose SCD2 Method",
 						"dependencyConditions": [
 							"Failed"
 						]
@@ -54,48 +54,6 @@
 				"linkedServiceName": {
 					"referenceName": "ls_sql_db_dev",
 					"type": "LinkedServiceReference"
-				}
-			},
-			{
-				"name": "Execute Full SCD2 ETL",
-				"description": "Execute Full SCD2 ETL pipeline",
-				"type": "ExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "Pipeline Monitoring Start",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"pipeline": {
-						"referenceName": "pl_Full_SCD2_ETL",
-						"type": "PipelineReference"
-					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"fileName": {
-							"value": "@pipeline().parameters.fileName",
-							"type": "Expression"
-						},
-						"SCD2Method": {
-							"value": "@pipeline().parameters.SCD2Method",
-							"type": "Expression"
-						},
-						"EnvironmentName": {
-							"value": "@pipeline().parameters.EnvironmentName",
-							"type": "Expression"
-						},
-						"MasterPipelineRunId": {
-							"value": "@pipeline().RunId",
-							"type": "Expression"
-						}
-					}
 				}
 			},
 			{
@@ -233,7 +191,7 @@
 				"type": "SqlServerStoredProcedure",
 				"dependsOn": [
 					{
-						"activity": "Execute Full SCD2 ETL",
+						"activity": "Choose SCD2 Method",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -267,6 +225,99 @@
 					"referenceName": "ls_sql_db_dev",
 					"type": "LinkedServiceReference"
 				}
+			},
+			{
+				"name": "Choose SCD2 Method",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Pipeline Monitoring Start",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(pipeline().parameters.SCD2Method, 'FullSCD2')",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute Snapshot SCD2 ETL",
+							"description": "Execute Snapshot SCD2 ETL pipeline",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_Snapshot_SCD2_ETL",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"fileName": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									},
+									"SCD2Method": {
+										"value": "@pipeline().parameters.SCD2Method",
+										"type": "Expression"
+									},
+									"EnvironmentName": {
+										"value": "@pipeline().parameters.EnvironmentName",
+										"type": "Expression"
+									},
+									"MasterPipelineRunId": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Execute Full SCD2 ETL",
+							"description": "Execute Full SCD2 ETL pipeline",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "pl_Full_SCD2_ETL",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"fileName": {
+										"value": "@pipeline().parameters.fileName",
+										"type": "Expression"
+									},
+									"SCD2Method": {
+										"value": "@pipeline().parameters.SCD2Method",
+										"type": "Expression"
+									},
+									"EnvironmentName": {
+										"value": "@pipeline().parameters.EnvironmentName",
+										"type": "Expression"
+									},
+									"MasterPipelineRunId": {
+										"value": "@pipeline().RunId",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
 			}
 		],
 		"parameters": {
@@ -282,9 +333,6 @@
 				"type": "string",
 				"defaultValue": "Development"
 			}
-		},
-		"folder": {
-			"name": "full_scd2_pipelines"
 		},
 		"annotations": []
 	}

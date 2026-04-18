@@ -30,3 +30,7 @@ CREATE TABLE [snapshot_scd2].[raw_Users]
     [PlanAddons] NVARCHAR(100) NULL
 );
 GO
+
+CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_raw_Users_Email_Username]
+    ON [snapshot_scd2].[raw_Users] ([Email], [Username]);
+GO

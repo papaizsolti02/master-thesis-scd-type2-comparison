@@ -45,3 +45,13 @@ CREATE TABLE [snapshot_scd2].[prod_Users]
     [Rowhash] VARBINARY(6000) NULL
 );
 GO
+
+CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_prod_Users_Email_Username]
+    ON [snapshot_scd2].[prod_Users] ([Email], [Username])
+    INCLUDE ([Rowhash], [IsActive]);
+GO
+
+CREATE INDEX [IX_PROD_Users_Email_Username_Active]
+    ON [snapshot_scd2].[prod_Users] ([Email], [Username])
+    WHERE [IsActive] = 1;
+GO

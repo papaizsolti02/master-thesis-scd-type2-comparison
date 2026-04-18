@@ -25,6 +25,7 @@ CREATE TABLE [snapshot_scd2].[UserComparableState]
 );
 GO
 
-CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_UserComparableState_Rowhash]
-    ON [snapshot_scd2].[UserComparableState] ([Rowhash]);
+CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_UserComparableState_Email_Username]
+    ON [snapshot_scd2].[UserComparableState] ([Email], [Username])
+    INCLUDE ([Rowhash]);
 GO

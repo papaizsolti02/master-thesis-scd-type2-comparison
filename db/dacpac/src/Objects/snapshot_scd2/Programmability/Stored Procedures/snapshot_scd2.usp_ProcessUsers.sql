@@ -43,11 +43,6 @@ BEGIN
         THROW 54002, 'Required table [snapshot_scd2].[raw_Users] does not exist.', 1;
     END;
 
-    IF OBJECT_ID(N'[snapshot_scd2].[TodayComparableUsers]', N'U') IS NULL
-    BEGIN
-        THROW 54003, 'Required table [snapshot_scd2].[TodayComparableUsers] does not exist.', 1;
-    END;
-
     IF OBJECT_ID(N'[snapshot_scd2].[UserComparableState]', N'U') IS NULL
     BEGIN
         THROW 54004, 'Required table [snapshot_scd2].[UserComparableState] does not exist.', 1;
@@ -80,64 +75,114 @@ BEGIN
         BEGIN TRAN;
 
         TRUNCATE TABLE [snapshot_scd2].[stage_Users];
-        TRUNCATE TABLE [snapshot_scd2].[TodayComparableUsers];
 
+        IF OBJECT_ID('tempdb..#CurrentComparable') IS NOT NULL
+        BEGIN
+            DROP TABLE #CurrentComparable;
+        END;
+
+        CREATE TABLE #CurrentComparable
+        (
+            [Email] NVARCHAR(320) NULL,
+            [Username] NVARCHAR(120) NULL,
+            [SubscriptionTier] NVARCHAR(40) NULL,
+            [BillingCycle] NVARCHAR(40) NULL,
+            [PaymentMethod] NVARCHAR(40) NULL,
+            [AutoRenew] CHAR(1) NULL,
+            [MarketingConsent] CHAR(1) NULL,
+            [PreferredLanguage] NVARCHAR(10) NULL,
+            [ContentLanguage] NVARCHAR(10) NULL,
+            [PlanAddons] NVARCHAR(100) NULL,
+            [Hashdata] VARCHAR(MAX) NULL,
+            [Rowhash] VARBINARY(6000) NULL,
+            [LastRefreshedDate] DATETIME NULL
+        );
+
+        CREATE NONCLUSTERED INDEX [IX_CurrentComparable_Email_Username]
+            ON #CurrentComparable ([Email], [Username])
+            INCLUDE ([Rowhash]);
+
+        INSERT INTO #CurrentComparable
+        (
+            [Email],
+            [Username],
+            [SubscriptionTier],
+            [BillingCycle],
+            [PaymentMethod],
+            [AutoRenew],
+            [MarketingConsent],
+            [PreferredLanguage],
+            [ContentLanguage],
+            [PlanAddons],
+            [Hashdata],
+            [Rowhash],
+            [LastRefreshedDate]
+        )
         SELECT
-            r.[FirstName],
-            r.[LastName],
-            r.[Email],
-            r.[Username],
-            r.[DateOfBirth],
-            r.[RegistrationDate],
-            r.[Country],
-            r.[City],
-            r.[Gender],
-            r.[AccountCreatedVia],
-            r.[ReferralSource],
-            r.[SubscriptionTier],
-            r.[BillingCycle],
-            r.[PaymentMethod],
-            r.[AutoRenew],
-            r.[MarketingConsent],
-            r.[PreferredLanguage],
-            r.[ContentLanguage],
-            r.[PlanAddons],
+            LOWER(TRIM(r.[Email])),
+            LOWER(TRIM(r.[Username])),
+            TRIM(r.[SubscriptionTier]),
+            TRIM(r.[BillingCycle]),
+            TRIM(r.[PaymentMethod]),
+            CASE WHEN r.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END,
+            CASE WHEN r.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END,
+            LOWER(TRIM(r.[PreferredLanguage])),
+            LOWER(TRIM(r.[ContentLanguage])),
+            TRIM(r.[PlanAddons]),
             CONCAT(
-                ISNULL(r.[Email], ''), '|',
-                ISNULL(r.[Username], ''), '|',
-                ISNULL(r.[SubscriptionTier], ''), '|',
-                ISNULL(r.[BillingCycle], ''), '|',
-                ISNULL(r.[PaymentMethod], ''), '|',
-                ISNULL(r.[AutoRenew], ''), '|',
-                ISNULL(r.[MarketingConsent], ''), '|',
-                ISNULL(r.[PreferredLanguage], ''), '|',
-                ISNULL(r.[ContentLanguage], ''), '|',
-                ISNULL(r.[PlanAddons], '')
-            ) AS [Hashdata],
-            HASHBYTES(
-                'SHA2_256',
-                CONCAT(
-                    ISNULL(r.[Email], ''), '|',
-                    ISNULL(r.[Username], ''), '|',
-                    ISNULL(r.[SubscriptionTier], ''), '|',
-                    ISNULL(r.[BillingCycle], ''), '|',
-                    ISNULL(r.[PaymentMethod], ''), '|',
-                    ISNULL(r.[AutoRenew], ''), '|',
-                    ISNULL(r.[MarketingConsent], ''), '|',
-                    ISNULL(r.[PreferredLanguage], ''), '|',
-                    ISNULL(r.[ContentLanguage], ''), '|',
-                    ISNULL(r.[PlanAddons], '')
-                )
-            ) AS [Rowhash]
-        INTO #CurrentComparable
+                ISNULL(LOWER(TRIM(r.[Email])), ''), '|',
+                ISNULL(LOWER(TRIM(r.[Username])), ''), '|',
+                ISNULL(TRIM(r.[SubscriptionTier]), ''), '|',
+                ISNULL(TRIM(r.[BillingCycle]), ''), '|',
+                ISNULL(TRIM(r.[PaymentMethod]), ''), '|',
+                ISNULL(CASE WHEN r.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END, ''), '|',
+                ISNULL(CASE WHEN r.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END, ''), '|',
+                ISNULL(LOWER(TRIM(r.[PreferredLanguage])), ''), '|',
+                ISNULL(LOWER(TRIM(r.[ContentLanguage])), ''), '|',
+                ISNULL(TRIM(r.[PlanAddons]), '')
+            ),
+            HASHBYTES('SHA2_256', CONCAT(
+                ISNULL(LOWER(TRIM(r.[Email])), ''), '|',
+                ISNULL(LOWER(TRIM(r.[Username])), ''), '|',
+                ISNULL(TRIM(r.[SubscriptionTier]), ''), '|',
+                ISNULL(TRIM(r.[BillingCycle]), ''), '|',
+                ISNULL(TRIM(r.[PaymentMethod]), ''), '|',
+                ISNULL(CASE WHEN r.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END, ''), '|',
+                ISNULL(CASE WHEN r.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END, ''), '|',
+                ISNULL(LOWER(TRIM(r.[PreferredLanguage])), ''), '|',
+                ISNULL(LOWER(TRIM(r.[ContentLanguage])), ''), '|',
+                ISNULL(TRIM(r.[PlanAddons]), '')
+            )),
+            CURRENT_TIMESTAMP
         FROM [snapshot_scd2].[raw_Users] AS r;
 
-        SET @RowsRead = @@ROWCOUNT;
+        IF OBJECT_ID('tempdb..#TodayComparableUsers') IS NOT NULL
+        BEGIN
+            DROP TABLE #TodayComparableUsers;
+        END;
 
-        CREATE NONCLUSTERED INDEX [IX__CurrentComparable_Rowhash]
-            ON #CurrentComparable ([Rowhash]);
+        CREATE TABLE #TodayComparableUsers
+        (
+            [Email] NVARCHAR(320) NULL,
+            [Username] NVARCHAR(120) NULL,
+            [SubscriptionTier] NVARCHAR(40) NULL,
+            [BillingCycle] NVARCHAR(40) NULL,
+            [PaymentMethod] NVARCHAR(40) NULL,
+            [AutoRenew] CHAR(1) NULL,
+            [MarketingConsent] CHAR(1) NULL,
+            [PreferredLanguage] NVARCHAR(10) NULL,
+            [ContentLanguage] NVARCHAR(10) NULL,
+            [PlanAddons] NVARCHAR(100) NULL,
+            [Hashdata] VARCHAR(MAX) NULL,
+            [Rowhash] VARBINARY(6000) NULL,
+            [LastRefreshedDate] DATETIME NULL
+        );
 
-        INSERT INTO [snapshot_scd2].[TodayComparableUsers]
+        CREATE NONCLUSTERED INDEX [IX_TodayComparableUsers_Email_Username]
+            ON #TodayComparableUsers ([Email], [Username])
+            INCLUDE ([Rowhash]);
+
+        INSERT INTO #TodayComparableUsers
         (
             [Email],
             [Username],
@@ -166,49 +211,15 @@ BEGIN
             c.[PlanAddons],
             c.[Hashdata],
             c.[Rowhash],
-            SYSUTCDATETIME()
+            c.[LastRefreshedDate]
         FROM #CurrentComparable AS c
         LEFT JOIN [snapshot_scd2].[UserComparableState] AS s
-            ON ISNULL(s.[Rowhash], 0x0) = ISNULL(c.[Rowhash], 0x0)
-        WHERE s.[Id] IS NULL;
+            ON ISNULL(s.[Email], '') = ISNULL(c.[Email], '')
+            AND ISNULL(s.[Username], '') = ISNULL(c.[Username], '')
+        WHERE s.[Id] IS NULL
+            OR ISNULL(s.[Rowhash], 0x0) <> ISNULL(c.[Rowhash], 0x0);
 
-        SET @RowsInserted = @@ROWCOUNT;
-        SET @RowsWritten = @RowsInserted;
-
-        DELETE FROM [snapshot_scd2].[UserComparableState];
-
-        INSERT INTO [snapshot_scd2].[UserComparableState]
-        (
-            [Email],
-            [Username],
-            [SubscriptionTier],
-            [BillingCycle],
-            [PaymentMethod],
-            [AutoRenew],
-            [MarketingConsent],
-            [PreferredLanguage],
-            [ContentLanguage],
-            [PlanAddons],
-            [Hashdata],
-            [Rowhash],
-            [LastRefreshedDate]
-        )
-        SELECT
-            c.[Email],
-            c.[Username],
-            c.[SubscriptionTier],
-            c.[BillingCycle],
-            c.[PaymentMethod],
-            c.[AutoRenew],
-            c.[MarketingConsent],
-            c.[PreferredLanguage],
-            c.[ContentLanguage],
-            c.[PlanAddons],
-            c.[Hashdata],
-            c.[Rowhash],
-            SYSUTCDATETIME()
-        FROM #CurrentComparable AS c;
-
+        SET @RowsRead = (SELECT COUNT_BIG(*) FROM [snapshot_scd2].[raw_Users]);
         INSERT INTO [snapshot_scd2].[stage_Users]
         (
             [FirstName],
@@ -233,31 +244,34 @@ BEGIN
             [LastRefreshedDate]
         )
         SELECT
-            c.[FirstName],
-            c.[LastName],
-            c.[Email],
-            c.[Username],
-            c.[DateOfBirth],
-            c.[RegistrationDate],
-            c.[Country],
-            c.[City],
-            c.[Gender],
-            c.[AccountCreatedVia],
-            c.[ReferralSource],
-            c.[SubscriptionTier],
-            c.[BillingCycle],
-            c.[PaymentMethod],
-            CASE WHEN c.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END,
-            CASE WHEN c.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END,
-            c.[PreferredLanguage],
-            c.[ContentLanguage],
-            c.[PlanAddons],
+            r.[FirstName],
+            r.[LastName],
+            r.[Email],
+            r.[Username],
+            r.[DateOfBirth],
+            r.[RegistrationDate],
+            r.[Country],
+            r.[City],
+            r.[Gender],
+            r.[AccountCreatedVia],
+            r.[ReferralSource],
+            r.[SubscriptionTier],
+            r.[BillingCycle],
+            r.[PaymentMethod],
+            CASE WHEN r.[AutoRenew] = '1' THEN 'Yes' ELSE 'No' END,
+            CASE WHEN r.[MarketingConsent] = '1' THEN 'Yes' ELSE 'No' END,
+            r.[PreferredLanguage],
+            r.[ContentLanguage],
+            r.[PlanAddons],
             CURRENT_TIMESTAMP
-        FROM #CurrentComparable AS c
-        INNER JOIN [snapshot_scd2].[TodayComparableUsers] AS t
-            ON ISNULL(t.[Rowhash], 0x0) = ISNULL(c.[Rowhash], 0x0);
+        FROM [snapshot_scd2].[raw_Users] AS r
+        INNER JOIN #TodayComparableUsers AS t
+            ON ISNULL(LOWER(TRIM(r.[Email])), '') = ISNULL(t.[Email], '')
+            AND ISNULL(LOWER(TRIM(r.[Username])), '') = ISNULL(t.[Username], '');
 
-        SET @RowsWritten += @@ROWCOUNT;
+        SET @RowsInserted = @@ROWCOUNT;
+        SET @RowsWritten = @RowsInserted;
+        SET @RowsScanned = @RowsRead;
 
         UPDATE s
         SET
@@ -348,6 +362,40 @@ BEGIN
         FROM [snapshot_scd2].[stage_Users] AS s;
 
         SET @RowsScanned = @RowsRead + @RowsUpdated;
+
+        TRUNCATE TABLE [snapshot_scd2].[UserComparableState];
+
+        INSERT INTO [snapshot_scd2].[UserComparableState]
+        (
+            [Email],
+            [Username],
+            [SubscriptionTier],
+            [BillingCycle],
+            [PaymentMethod],
+            [AutoRenew],
+            [MarketingConsent],
+            [PreferredLanguage],
+            [ContentLanguage],
+            [PlanAddons],
+            [Hashdata],
+            [Rowhash],
+            [LastRefreshedDate]
+        )
+        SELECT
+            c.[Email],
+            c.[Username],
+            c.[SubscriptionTier],
+            c.[BillingCycle],
+            c.[PaymentMethod],
+            c.[AutoRenew],
+            c.[MarketingConsent],
+            c.[PreferredLanguage],
+            c.[ContentLanguage],
+            c.[PlanAddons],
+            c.[Hashdata],
+            c.[Rowhash],
+            c.[LastRefreshedDate]
+        FROM #CurrentComparable AS c;
 
         COMMIT TRAN;
 

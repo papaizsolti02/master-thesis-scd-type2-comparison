@@ -42,3 +42,8 @@ CREATE TABLE [snapshot_scd2].[stage_Users]
     [Rowhash] VARBINARY(6000) NULL
 );
 GO
+
+CREATE NONCLUSTERED INDEX [IX_snapshot_scd2_stage_Users_Email_Username]
+    ON [snapshot_scd2].[stage_Users] ([Email], [Username])
+    INCLUDE ([Rowhash]);
+GO
